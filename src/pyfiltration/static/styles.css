@@ -55,9 +55,28 @@ h2 {
   line-height: 1.2;
 }
 
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+.python-icon {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(0 1px 1px rgba(18, 27, 38, 0.16));
+}
+
+.brand-copy {
+  min-width: 0;
+}
+
 .topbar p {
   margin-top: 4px;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .top-actions {
@@ -535,6 +554,15 @@ input:focus {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .brand-lockup {
+    align-items: flex-start;
+  }
+
+  .python-icon {
+    width: 40px;
+    height: 40px;
   }
 
   .top-actions {
