@@ -108,6 +108,7 @@ form {
 }
 
 form section,
+.basis-panel,
 .summary-panel,
 .chart-panel,
 .metric {
@@ -135,6 +136,12 @@ label {
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+}
+
+.help-text {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 input {
@@ -197,6 +204,43 @@ input:focus {
   color: #8f1f17;
   border-color: #f0b2ab;
   background: #fff5f3;
+}
+
+.basis-panel {
+  padding: 14px;
+}
+
+.basis-panel h2 {
+  margin-bottom: 10px;
+}
+
+.basis-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.basis-grid div {
+  min-height: 88px;
+  padding: 10px;
+  border: 1px solid #edf0f4;
+  border-radius: 6px;
+  background: #fbfcfd;
+}
+
+.basis-grid strong,
+.basis-grid span {
+  display: block;
+}
+
+.basis-grid strong {
+  margin-bottom: 6px;
+}
+
+.basis-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .metric-grid {
@@ -309,6 +353,10 @@ input:focus {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(150px, 1fr));
   }
+
+  .basis-grid {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -326,6 +374,7 @@ input:focus {
   }
 
   .field-grid,
+  .basis-grid,
   .metric-grid,
   .chart-grid {
     grid-template-columns: 1fr;

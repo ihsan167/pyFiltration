@@ -11,7 +11,6 @@ from .calculations import cadr_from_decay, decay_rate_from_samples
 from .config import load_design_config
 from .design import design_air_purifier
 from .report import write_summary_files
-from .units import m3h_to_cfm
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -59,11 +58,12 @@ def _run_design(args: argparse.Namespace) -> int:
         plot_paths = write_plots(inputs, result, args.out)
 
     print(f"Room: {inputs.room.name}")
-    print(f"Required P-CADR: {result.required_p_cadr_m3h:.1f} m3/h ({m3h_to_cfm(result.required_p_cadr_m3h):.0f} cfm)")
-    print(f"Loaded P-CADR:   {result.loaded_p_cadr_m3h:.1f} m3/h ({m3h_to_cfm(result.loaded_p_cadr_m3h):.0f} cfm)")
-    print(f"Required F-CADR: {result.required_f_cadr_m3h:.1f} m3/h ({m3h_to_cfm(result.required_f_cadr_m3h):.0f} cfm)")
-    print(f"Loaded F-CADR:   {result.loaded_f_cadr_m3h:.1f} m3/h ({m3h_to_cfm(result.loaded_f_cadr_m3h):.0f} cfm)")
-    print(f"Media area:      {result.required_media_area_m2:.3f} m2")
+    print(f"Required P-CADR: {result.required_p_cadr_m3h:.1f} m3/h")
+    print(f"Loaded P-CADR:   {result.loaded_p_cadr_m3h:.1f} m3/h")
+    print(f"Required F-CADR: {result.required_f_cadr_m3h:.1f} m3/h")
+    print(f"Loaded F-CADR:   {result.loaded_f_cadr_m3h:.1f} m3/h")
+    print(f"Media basis:     {result.media_area_basis}")
+    print(f"Media area used: {result.required_media_area_m2:.3f} m2")
     print(f"Wrote {json_path}")
     print(f"Wrote {md_path}")
     for plot_path in plot_paths:
@@ -98,7 +98,7 @@ def _run_lab_cadr(args: argparse.Namespace) -> int:
     cadr = cadr_from_decay(args.volume_m3, total_decay, natural_decay)
     print(f"Natural decay: {natural_decay:.4f} 1/h")
     print(f"Total decay:   {total_decay:.4f} 1/h")
-    print(f"CADR:          {cadr:.2f} m3/h ({m3h_to_cfm(cadr):.1f} cfm)")
+    print(f"CADR:          {cadr:.2f} m3/h")
     return 0
 
 

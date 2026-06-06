@@ -99,6 +99,9 @@ class FormaldehydeSpec:
 class FilterSpec:
     media_velocity_limit_m_s: float
     pleat_area_multiplier: float = 1.0
+    fixed_media_area_m2: float | None = None
+    frontal_width_m: float | None = None
+    frontal_height_m: float | None = None
     bypass_fraction: float = 0.0
     pressure_drop_ref_pa: float = 50.0
     pressure_drop_ref_velocity_m_s: float = 0.2
@@ -113,6 +116,30 @@ class FilterSpec:
         _require_positive("filter.pressure_drop_ref_velocity_m_s", self.pressure_drop_ref_velocity_m_s)
         _require_positive("filter.pressure_drop_exponent", self.pressure_drop_exponent)
         _require_positive("filter.loaded_pressure_drop_multiplier", self.loaded_pressure_drop_multiplier)
+        if self.fixed_media_area_m2 is not None:
+            _require_positive("filter.fixed_media_area_m2", self.fixed_media_area_m2)
+        if self.frontal_width_m is not None:
+            _require_positive("filter.frontal_width_m", self.frontal_width_m)
+        if self.frontal_height_m is not None:
+            _require_positive("filter.frontal_height_m", self.frontal_height_m)
+        if (self.frontal_width_m is None) != (self.frontal_height_m is None):
+            raise ValueError("filter.frontal_width_m and filter.frontal_height_m must be provided together")
+
+    @property
+    def supplied_frontal_area_m2(self) -> float | None:
+        if self.frontal_width_m is None or self.frontal_height_m is None:
+            if self.fixed_media_area_m2 is None:
+                return None
+            return self.fixed_media_area_m2 / self.pleat_area_multiplier
+        return self.frontal_width_m * self.frontal_height_m
+
+    @property
+    def supplied_media_area_m2(self) -> float | None:
+        if self.fixed_media_area_m2 is not None:
+            return self.fixed_media_area_m2
+        if self.supplied_frontal_area_m2 is None:
+            return None
+        return self.supplied_frontal_area_m2 * self.pleat_area_multiplier
 
 
 @dataclass(frozen=True)
@@ -166,6 +193,8 @@ class DesignResult:
     required_f_cadr_m3h: float
     design_airflow_m3h: float
     required_media_area_m2: float
+    minimum_required_media_area_m2: float
+    media_area_basis: str
     frontal_area_m2: float
     clean_airflow_m3h: float
     loaded_airflow_m3h: float

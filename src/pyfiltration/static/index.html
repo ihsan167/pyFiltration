@@ -138,7 +138,24 @@
 
           <section>
             <h2>Filter</h2>
+            <p class="help-text">Choose sizing to find the required media area, or evaluate a known filter to see the CADR it can deliver.</p>
+            <div class="segmented">
+              <label><input name="filter-size-mode" value="sizing" type="radio" checked> Size required</label>
+              <label><input name="filter-size-mode" value="fixed" type="radio"> Evaluate filter</label>
+            </div>
             <div class="field-grid">
+              <label data-filter-size-mode="fixed">
+                Media area, m2
+                <input data-path="filter.fixed_media_area_m2" type="number" step="0.001" min="0">
+              </label>
+              <label data-filter-size-mode="fixed">
+                Frontal width, m
+                <input data-path="filter.frontal_width_m" type="number" step="0.001" min="0">
+              </label>
+              <label data-filter-size-mode="fixed">
+                Frontal height, m
+                <input data-path="filter.frontal_height_m" type="number" step="0.001" min="0">
+              </label>
               <label>
                 Velocity limit, m/s
                 <input data-path="filter.media_velocity_limit_m_s" type="number" step="0.01" min="0">
@@ -216,6 +233,28 @@
 
       <section class="workspace">
         <div id="status" class="status">Ready</div>
+
+        <section class="basis-panel">
+          <h2>Calculator Basis</h2>
+          <div class="basis-grid">
+            <div>
+              <strong>P-CADR</strong>
+              <span>Particle clean air delivery from airflow, particle efficiency, bypass leakage, and room mixing.</span>
+            </div>
+            <div>
+              <strong>F-CADR</strong>
+              <span>Formaldehyde clean air delivery from airflow, gas efficiency, bypass leakage, and room mixing.</span>
+            </div>
+            <div>
+              <strong>Filter Size</strong>
+              <span>In sizing mode it finds media area. In evaluate mode your media area or width x height x pleat multiplier sets the filter size.</span>
+            </div>
+            <div>
+              <strong>Pressure</strong>
+              <span>Filter pressure drop is scaled from reference velocity and checked against the fan curve.</span>
+            </div>
+          </div>
+        </section>
 
         <section class="metric-grid" id="metrics"></section>
 

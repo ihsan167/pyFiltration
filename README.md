@@ -5,6 +5,7 @@ Engineering calculator for sizing home air-purifier filters and estimating:
 - P-CADR: particulate clean air delivery rate, including PM2.5-style estimates.
 - F-CADR: formaldehyde clean air delivery rate for gas-phase media.
 - Filter media area, frontal area, face velocity, pressure drop, fan margin, service-life indicators, and room decay behavior.
+- Fixed filter media evaluation from media area or frontal width x height.
 
 The project is designed for engineers who need transparent assumptions, editable inputs, and plots suitable for design review.
 
@@ -22,6 +23,7 @@ The calculator has two complementary modes:
    - pressure drop versus media velocity
    - clean and loaded filter states
    - activated-carbon mass and usable formaldehyde capacity
+   - optional fixed media area or frontal width x height for evaluating an existing filter
 
 2. Lab-style CADR from decay measurements:
    - natural decay rate
@@ -87,6 +89,11 @@ http://127.0.0.1:8000
 ```
 
 The UI lets you edit room dimensions, particle targets, formaldehyde source and media assumptions, filter pressure drop, fan curve, and safety factor. It calculates P-CADR, F-CADR, media area, pressure margin, ACH, decay time, and formaldehyde service life, then draws engineering charts in the browser.
+
+Use the Filter section in either mode:
+
+- `Size required`: the calculator finds the media area needed to meet the CADR targets.
+- `Evaluate filter`: enter either media area in `m2`, or enter frontal width and height in `m` with the pleat multiplier. The calculator then estimates airflow, pressure drop, P-CADR, and F-CADR for that actual filter size.
 
 ## Example Python API
 

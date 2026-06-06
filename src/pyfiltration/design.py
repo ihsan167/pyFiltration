@@ -50,8 +50,10 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
     design_required_f = required_f * inputs.safety_factor
 
     media_area = 0.0
+    minimum_required_media_area = 0.0
     design_airflow = 0.0
     hcho_efficiency = hcho.single_pass_efficiency if hcho.single_pass_efficiency is not None else 0.25
+    supplied_media_area = filt.supplied_media_area_m2
 
     for _ in range(12):
         particle_effective = particle.single_pass_efficiency * (1.0 - filt.bypass_fraction) * room.mixing_effectiveness
@@ -63,7 +65,8 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
 
         area_by_velocity = next_design_airflow / 3600.0 / filt.media_velocity_limit_m_s
         area_by_pressure = _media_area_required_by_pressure(next_design_airflow, fan, filt, loaded=True)
-        next_media_area = max(area_by_velocity, area_by_pressure)
+        next_required_media_area = max(area_by_velocity, area_by_pressure)
+        next_media_area = supplied_media_area if supplied_media_area is not None else next_required_media_area
 
         next_hcho_efficiency = _formaldehyde_efficiency(hcho, next_design_airflow, next_media_area)
         if (
@@ -73,20 +76,26 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
         ):
             design_airflow = next_design_airflow
             media_area = next_media_area
+            minimum_required_media_area = next_required_media_area
             hcho_efficiency = next_hcho_efficiency
             break
         design_airflow = next_design_airflow
         media_area = next_media_area
+        minimum_required_media_area = next_required_media_area
         hcho_efficiency = next_hcho_efficiency
 
     clean_airflow = _actual_airflow(fan, filt, media_area, loaded=False, flow_hint=design_airflow)
     loaded_airflow = _actual_airflow(fan, filt, media_area, loaded=True, flow_hint=design_airflow)
+    if supplied_media_area is not None:
+        hcho_efficiency = _formaldehyde_efficiency(hcho, loaded_airflow, media_area)
 
     clean_dp = _system_pressure_drop(fan, filt, clean_airflow, media_area, loaded=False)
     loaded_dp = _system_pressure_drop(fan, filt, loaded_airflow, media_area, loaded=True)
     media_velocity_clean = _media_velocity(clean_airflow, media_area)
     media_velocity_loaded = _media_velocity(loaded_airflow, media_area)
-    frontal_area = media_area / filt.pleat_area_multiplier
+    frontal_area = filt.supplied_frontal_area_m2 if supplied_media_area is not None else media_area / filt.pleat_area_multiplier
+    if frontal_area is None:
+        frontal_area = media_area / filt.pleat_area_multiplier
 
     clean_p_cadr = cadr_from_airflow(
         clean_airflow,
@@ -129,6 +138,10 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
         pressure_margin=pressure_margin,
         service_life=service_life,
         hcho=hcho,
+        supplied_media_area=supplied_media_area,
+        minimum_required_media_area=minimum_required_media_area,
+        media_velocity_loaded=media_velocity_loaded,
+        media_velocity_limit=filt.media_velocity_limit_m_s,
     )
 
     return DesignResult(
@@ -138,6 +151,8 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
         required_f_cadr_m3h=required_f,
         design_airflow_m3h=design_airflow,
         required_media_area_m2=media_area,
+        minimum_required_media_area_m2=minimum_required_media_area,
+        media_area_basis="user-defined fixed media" if supplied_media_area is not None else "sized to requirements",
         frontal_area_m2=frontal_area,
         clean_airflow_m3h=clean_airflow,
         loaded_airflow_m3h=loaded_airflow,
@@ -285,6 +300,10 @@ def _warnings(
     pressure_margin: float | None,
     service_life: float | None,
     hcho: FormaldehydeSpec,
+    supplied_media_area: float | None,
+    minimum_required_media_area: float,
+    media_velocity_loaded: float,
+    media_velocity_limit: float,
 ) -> tuple[str, ...]:
     warnings: list[str] = []
     if loaded_p_cadr + 1e-6 < required_p:
@@ -293,6 +312,12 @@ def _warnings(
         warnings.append("Loaded F-CADR is below the unsafed formaldehyde requirement.")
     if pressure_margin is not None and pressure_margin < 0:
         warnings.append("Fan pressure at design airflow is below loaded-filter pressure demand.")
+    if supplied_media_area is not None and supplied_media_area + 1e-6 < minimum_required_media_area:
+        warnings.append(
+            "User-defined media area is below the calculated area needed to meet the target CADR and pressure limits."
+        )
+    if supplied_media_area is not None and media_velocity_loaded > media_velocity_limit:
+        warnings.append("Loaded media velocity is above the selected filter media velocity limit.")
     if service_life is None:
         warnings.append("Formaldehyde service life was not calculated because sorbent capacity data is incomplete.")
     elif service_life < 720:

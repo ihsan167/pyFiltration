@@ -76,6 +76,20 @@ delta_p = delta_p_ref * (media_velocity / velocity_ref) ^ exponent
 
 If a fan curve is provided, the required media area is also checked against available fan pressure at the design airflow. The loaded-filter multiplier is applied to verify end-of-life performance.
 
+When a fixed filter size is supplied, the calculator does not increase the media area. It evaluates the supplied area instead:
+
+```text
+media area = fixed media area
+```
+
+or, when panel dimensions are supplied:
+
+```text
+media area = frontal width * frontal height * pleat area multiplier
+```
+
+The resulting pressure drop is solved against the fan curve to estimate clean and loaded airflow. CADR is then calculated from the delivered airflow, not from the target airflow.
+
 ## Formaldehyde Capacity
 
 F-CADR is an initial or current performance value. Sorbent media can lose capacity as it loads. The service-life estimate is:
@@ -99,6 +113,7 @@ This is intentionally conservative and should be replaced with media supplier br
 - Formaldehyde efficiency versus concentration, RH, temperature, and aging
 - Filter bypass leakage
 - Filter media velocity limit
+- Fixed media area, or frontal width and height
 - Pleat area multiplier
 - Clean and loaded pressure drop
 - Fan free airflow, shutoff pressure, and system losses

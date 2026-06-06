@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 from .models import DesignInputs, DesignResult
-from .units import m2_to_ft2, m3h_to_cfm
 
 
 def write_summary_files(inputs: DesignInputs, result: DesignResult, output_dir: str | Path) -> tuple[Path, Path]:
@@ -44,7 +43,7 @@ def _summary_markdown(inputs: DesignInputs, result: DesignResult) -> str:
 ## Room
 
 - Name: {inputs.room.name}
-- Floor area: {result.room_floor_area_m2:.2f} m2 ({m2_to_ft2(result.room_floor_area_m2):.1f} ft2)
+- Floor area: {result.room_floor_area_m2:.2f} m2
 - Volume: {result.room_volume_m3:.2f} m3
 - Mixing effectiveness: {inputs.room.mixing_effectiveness:.2f}
 
@@ -52,16 +51,18 @@ def _summary_markdown(inputs: DesignInputs, result: DesignResult) -> str:
 
 | Metric | Required | Clean estimated | Loaded estimated |
 | --- | ---: | ---: | ---: |
-| P-CADR | {result.required_p_cadr_m3h:.1f} m3/h ({m3h_to_cfm(result.required_p_cadr_m3h):.0f} cfm) | {result.clean_p_cadr_m3h:.1f} m3/h | {result.loaded_p_cadr_m3h:.1f} m3/h |
-| F-CADR | {result.required_f_cadr_m3h:.1f} m3/h ({m3h_to_cfm(result.required_f_cadr_m3h):.0f} cfm) | {result.clean_f_cadr_m3h:.1f} m3/h | {result.loaded_f_cadr_m3h:.1f} m3/h |
+| P-CADR | {result.required_p_cadr_m3h:.1f} m3/h | {result.clean_p_cadr_m3h:.1f} m3/h | {result.loaded_p_cadr_m3h:.1f} m3/h |
+| F-CADR | {result.required_f_cadr_m3h:.1f} m3/h | {result.clean_f_cadr_m3h:.1f} m3/h | {result.loaded_f_cadr_m3h:.1f} m3/h |
 
 ## Filter And Fan
 
-- Design airflow: {result.design_airflow_m3h:.1f} m3/h ({m3h_to_cfm(result.design_airflow_m3h):.0f} cfm)
+- Media area basis: {result.media_area_basis}
+- Design airflow: {result.design_airflow_m3h:.1f} m3/h
 - Clean airflow: {result.clean_airflow_m3h:.1f} m3/h
 - Loaded airflow: {result.loaded_airflow_m3h:.1f} m3/h
-- Required media area: {result.required_media_area_m2:.3f} m2 ({m2_to_ft2(result.required_media_area_m2):.2f} ft2)
-- Approximate frontal area: {result.frontal_area_m2:.3f} m2 ({m2_to_ft2(result.frontal_area_m2):.2f} ft2)
+- Media area used: {result.required_media_area_m2:.3f} m2
+- Calculated minimum media area: {result.minimum_required_media_area_m2:.3f} m2
+- Frontal area: {result.frontal_area_m2:.3f} m2
 - Clean pressure drop: {result.clean_pressure_drop_pa:.1f} Pa
 - Loaded pressure drop: {result.loaded_pressure_drop_pa:.1f} Pa
 - Pressure margin at design airflow: {pressure_margin}

@@ -32,6 +32,9 @@ const defaultConfig = {
   filter: {
     media_velocity_limit_m_s: 0.22,
     pleat_area_multiplier: 8.0,
+    fixed_media_area_m2: null,
+    frontal_width_m: null,
+    frontal_height_m: null,
     bypass_fraction: 0.03,
     pressure_drop_ref_pa: 55.0,
     pressure_drop_ref_velocity_m_s: 0.20,
@@ -52,19 +55,21 @@ const defaultConfig = {
 let latestPayload = null;
 let latestResult = null;
 
-const cfmPerM3h = 1 / 1.69901082;
-const ft2PerM2 = 10.7639104167;
-
 document.addEventListener("DOMContentLoaded", () => {
   setForm(defaultConfig);
   updateFanMode();
+  updateFilterSizeMode();
   document.querySelectorAll("input[name='fan-mode']").forEach((input) => {
     input.addEventListener("change", updateFanMode);
+  });
+  document.querySelectorAll("input[name='filter-size-mode']").forEach((input) => {
+    input.addEventListener("change", updateFilterSizeMode);
   });
   document.getElementById("calculate-button").addEventListener("click", calculate);
   document.getElementById("reset-button").addEventListener("click", () => {
     setForm(defaultConfig);
     updateFanMode();
+    updateFilterSizeMode();
     calculate();
   });
   document.getElementById("export-button").addEventListener("click", exportJson);
@@ -78,6 +83,11 @@ function setForm(config) {
   });
   const fixed = config.fan && config.fan.fixed_airflow_m3h;
   document.querySelector(`input[name='fan-mode'][value='${fixed ? "fixed" : "curve"}']`).checked = true;
+  const fixedFilter = config.filter && (
+    config.filter.fixed_media_area_m2 ||
+    (config.filter.frontal_width_m && config.filter.frontal_height_m)
+  );
+  document.querySelector(`input[name='filter-size-mode'][value='${fixedFilter ? "fixed" : "sizing"}']`).checked = true;
 }
 
 function readForm() {
@@ -94,6 +104,13 @@ function readForm() {
   } else {
     payload.fan.free_airflow_m3h = null;
     payload.fan.shutoff_pressure_pa = null;
+  }
+
+  const filterMode = document.querySelector("input[name='filter-size-mode']:checked").value;
+  if (filterMode === "sizing") {
+    payload.filter.fixed_media_area_m2 = null;
+    payload.filter.frontal_width_m = null;
+    payload.filter.frontal_height_m = null;
   }
   return payload;
 }
@@ -136,9 +153,9 @@ function renderResults(inputs, result) {
 
 function renderMetrics(result) {
   const metrics = [
-    ["Loaded P-CADR", fmt(result.loaded_p_cadr_m3h, 1), `${fmt(result.loaded_p_cadr_m3h * cfmPerM3h, 0)} cfm`],
-    ["Loaded F-CADR", fmt(result.loaded_f_cadr_m3h, 1), `${fmt(result.loaded_f_cadr_m3h * cfmPerM3h, 0)} cfm`],
-    ["Media area", fmt(result.required_media_area_m2, 3), `${fmt(result.required_media_area_m2 * ft2PerM2, 2)} ft2`],
+    ["Loaded P-CADR", fmt(result.loaded_p_cadr_m3h, 1), "m3/h"],
+    ["Loaded F-CADR", fmt(result.loaded_f_cadr_m3h, 1), "m3/h"],
+    ["Media area", fmt(result.required_media_area_m2, 3), "m2"],
     ["Pressure margin", result.pressure_margin_at_design_pa === null ? "Fixed" : fmt(result.pressure_margin_at_design_pa, 1), "Pa at design flow"],
     ["Loaded P-ACH", fmt(result.loaded_p_ach, 2), "1/h"],
     ["Loaded F-ACH", fmt(result.loaded_f_ach, 2), "1/h"],
@@ -183,6 +200,11 @@ function renderSummary(inputs, result) {
           <td>${fmt(result.loaded_airflow_m3h, 1)}</td>
         </tr>
         <tr>
+          <td>Media area, m2</td>
+          <td>${fmt(result.minimum_required_media_area_m2, 3)}</td>
+          <td colspan="2">${fmt(result.required_media_area_m2, 3)} used</td>
+        </tr>
+        <tr>
           <td>Pressure drop, Pa</td>
           <td>${result.fan_available_pressure_at_design_pa === null ? "Fixed flow" : fmt(result.fan_available_pressure_at_design_pa, 1)}</td>
           <td>${fmt(result.clean_pressure_drop_pa, 1)}</td>
@@ -190,7 +212,7 @@ function renderSummary(inputs, result) {
         </tr>
       </tbody>
     </table>
-    <p class="warnings">Room volume: ${fmt(result.room_volume_m3, 2)} m3. Frontal area: ${fmt(result.frontal_area_m2, 3)} m2. Formaldehyde efficiency used: ${fmt(result.formaldehyde_efficiency_used, 3)}.</p>
+    <p class="warnings">Media basis: ${escapeHtml(result.media_area_basis)}. Room volume: ${fmt(result.room_volume_m3, 2)} m3. Frontal area: ${fmt(result.frontal_area_m2, 3)} m2. Formaldehyde efficiency used: ${fmt(result.formaldehyde_efficiency_used, 3)}.</p>
     ${warnings}
   `;
 }
@@ -461,6 +483,13 @@ function updateFanMode() {
   const mode = document.querySelector("input[name='fan-mode']:checked").value;
   document.querySelectorAll("[data-mode]").forEach((item) => {
     item.classList.toggle("hidden", item.dataset.mode !== mode);
+  });
+}
+
+function updateFilterSizeMode() {
+  const mode = document.querySelector("input[name='filter-size-mode']:checked").value;
+  document.querySelectorAll("[data-filter-size-mode]").forEach((item) => {
+    item.classList.toggle("hidden", item.dataset.filterSizeMode !== mode);
   });
 }
 
