@@ -120,6 +120,7 @@ const fieldHelp = {
 
 document.addEventListener("DOMContentLoaded", () => {
   applyFieldHelp();
+  setupPanelToggles();
   setForm(defaultConfig);
   updateFanMode();
   updateFilterSizeMode();
@@ -717,6 +718,29 @@ function hideFieldTooltip() {
   if (tooltipElement) {
     tooltipElement.classList.remove("visible");
   }
+}
+
+function setupPanelToggles() {
+  setupToggleButton("toggle-output-button", "output-meaning-body", "Hide", "Show meaning");
+  setupToggleButton("toggle-charts-button", "charts-content", "Hide graphs", "Show graphs");
+}
+
+function setupToggleButton(buttonId, targetId, expandedText, collapsedText) {
+  const button = document.getElementById(buttonId);
+  const target = document.getElementById(targetId);
+  if (!button || !target) {
+    return;
+  }
+  const sync = () => {
+    const expanded = !target.classList.contains("hidden");
+    button.textContent = expanded ? expandedText : collapsedText;
+    button.setAttribute("aria-expanded", String(expanded));
+  };
+  button.addEventListener("click", () => {
+    target.classList.toggle("hidden");
+    sync();
+  });
+  sync();
 }
 
 function exportJson() {

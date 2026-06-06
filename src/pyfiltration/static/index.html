@@ -267,8 +267,26 @@
         </section>
 
         <section class="output-notes">
-          <h2>Output Meaning</h2>
-          <p><strong>Loaded</strong> results assume the filter is at end-of-life, with higher pressure drop and lower airflow than a clean filter. Use loaded values for conservative sizing decisions.</p>
+          <div class="section-header">
+            <h2>Output Meaning</h2>
+            <button id="toggle-output-button" type="button" class="secondary compact-button" aria-controls="output-meaning-body" aria-expanded="true">Hide</button>
+          </div>
+          <div id="output-meaning-body" class="output-body">
+            <div class="meaning-grid">
+              <div>
+                <strong>Required</strong>
+                <span>Minimum target calculated from room volume, target ACH, formaldehyde source inputs, and safety factor for sizing.</span>
+              </div>
+              <div>
+                <strong>Clean</strong>
+                <span>Estimated performance with a new filter. Pressure drop is lower, so airflow and CADR are usually higher.</span>
+              </div>
+              <div>
+                <strong>Loaded</strong>
+                <span>Estimated end-of-life performance with a dirty filter. Use this conservative value for design decisions.</span>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section class="metric-grid" id="metrics"></section>
@@ -278,26 +296,34 @@
           <div id="summary"></div>
         </section>
 
-        <section class="chart-grid">
-          <div class="chart-panel">
-            <h2>CADR Breakdown</h2>
-            <div id="cadr-chart" class="chart"></div>
+        <section class="charts-panel">
+          <div class="section-header">
+            <h2>Graphs</h2>
+            <button id="toggle-charts-button" type="button" class="secondary compact-button" aria-controls="charts-content" aria-expanded="false">Show graphs</button>
           </div>
-          <div class="chart-panel">
-            <h2>Fan Pressure</h2>
-            <div id="fan-chart" class="chart"></div>
-          </div>
-          <div class="chart-panel">
-            <h2>Filter Area</h2>
-            <div id="area-chart" class="chart"></div>
-          </div>
-          <div class="chart-panel">
-            <h2>Room Decay</h2>
-            <div id="decay-chart" class="chart"></div>
-          </div>
-          <div class="chart-panel wide">
-            <h2>Formaldehyde Capacity</h2>
-            <div id="capacity-chart" class="chart"></div>
+          <div id="charts-content" class="charts-content hidden">
+            <div class="chart-grid">
+              <div class="chart-panel">
+                <h2>CADR Breakdown</h2>
+                <div id="cadr-chart" class="chart"></div>
+              </div>
+              <div class="chart-panel">
+                <h2>Fan Pressure</h2>
+                <div id="fan-chart" class="chart"></div>
+              </div>
+              <div class="chart-panel">
+                <h2>Filter Area</h2>
+                <div id="area-chart" class="chart"></div>
+              </div>
+              <div class="chart-panel">
+                <h2>Room Decay</h2>
+                <div id="decay-chart" class="chart"></div>
+              </div>
+              <div class="chart-panel wide">
+                <h2>Formaldehyde Capacity</h2>
+                <div id="capacity-chart" class="chart"></div>
+              </div>
+            </div>
           </div>
         </section>
       </section>
