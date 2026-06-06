@@ -1,0 +1,46 @@
+{
+  "room": {
+    "name": "Main bedroom",
+    "length_m": 5.0,
+    "width_m": 4.0,
+    "height_m": 2.7,
+    "mixing_effectiveness": 0.85
+  },
+  "particle": {
+    "target_clean_ach": 5.0,
+    "existing_removal_ach": 0.3,
+    "single_pass_efficiency": 0.97
+  },
+  "formaldehyde": {
+    "target_clean_ach": 2.0,
+    "existing_removal_ach": 0.1,
+    "target_concentration_ug_m3": 60.0,
+    "source_generation_ug_h": 500.0,
+    "outdoor_concentration_ug_m3": 5.0,
+    "ventilation_m3h": 20.0,
+    "single_pass_efficiency": 0.55,
+    "challenge_concentration_ug_m3": 80.0,
+    "carbon_mass_g": 900.0,
+    "capacity_mg_per_g": 12.0,
+    "capacity_utilization": 0.55,
+    "temperature_c": 25.0,
+    "relative_humidity_percent": 60.0
+  },
+  "filter": {
+    "media_velocity_limit_m_s": 0.22,
+    "pleat_area_multiplier": 8.0,
+    "bypass_fraction": 0.03,
+    "pressure_drop_ref_pa": 55.0,
+    "pressure_drop_ref_velocity_m_s": 0.20,
+    "pressure_drop_exponent": 1.35,
+    "loaded_pressure_drop_multiplier": 1.8
+  },
+  "fan": {
+    "free_airflow_m3h": 430.0,
+    "shutoff_pressure_pa": 210.0,
+    "system_pressure_pa": 18.0,
+    "curve_exponent": 1.7,
+    "power_w": 45.0
+  },
+  "safety_factor": 1.15
+}

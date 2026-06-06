@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyfiltration"
+version = "0.1.0"
+description = "Engineering calculator for home air-purifier P-CADR, F-CADR, filter sizing, and visualization."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "pyFiltration contributors" }]
+dependencies = [
+]
+
+[project.optional-dependencies]
+yaml = [
+  "PyYAML>=6.0",
+]
+dev = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+pyfiltration = "pyfiltration.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
