@@ -109,6 +109,67 @@ class DesignTests(unittest.TestCase):
         self.assertLess(result.loaded_p_cadr_m3h, result.required_p_cadr_m3h)
         self.assertTrue(result.warnings)
 
+    def test_filter_dimensions_compute_media_area(self):
+        inputs = load_design_config("examples/home_air_purifier.json")
+        payload = {
+            "room": {
+                "name": inputs.room.name,
+                "length_m": inputs.room.length_m,
+                "width_m": inputs.room.width_m,
+                "height_m": inputs.room.height_m,
+                "mixing_effectiveness": inputs.room.mixing_effectiveness,
+            },
+            "particle": {
+                "target_clean_ach": inputs.particle.target_clean_ach,
+                "existing_removal_ach": inputs.particle.existing_removal_ach,
+                "single_pass_efficiency": inputs.particle.single_pass_efficiency,
+            },
+            "formaldehyde": {
+                "target_clean_ach": inputs.formaldehyde.target_clean_ach,
+                "existing_removal_ach": inputs.formaldehyde.existing_removal_ach,
+                "single_pass_efficiency": inputs.formaldehyde.single_pass_efficiency,
+            },
+            "filter": {
+                "media_velocity_limit_m_s": inputs.filter.media_velocity_limit_m_s,
+                "pleat_area_multiplier": 8.0,
+                "frontal_width_m": 0.3,
+                "frontal_height_m": 0.5,
+                "bypass_fraction": inputs.filter.bypass_fraction,
+                "pressure_drop_ref_pa": inputs.filter.pressure_drop_ref_pa,
+                "pressure_drop_ref_velocity_m_s": inputs.filter.pressure_drop_ref_velocity_m_s,
+                "pressure_drop_exponent": inputs.filter.pressure_drop_exponent,
+                "loaded_pressure_drop_multiplier": inputs.filter.loaded_pressure_drop_multiplier,
+            },
+            "fan": {
+                "free_airflow_m3h": inputs.fan.free_airflow_m3h,
+                "shutoff_pressure_pa": inputs.fan.shutoff_pressure_pa,
+                "system_pressure_pa": inputs.fan.system_pressure_pa,
+                "curve_exponent": inputs.fan.curve_exponent,
+            },
+            "safety_factor": inputs.safety_factor,
+        }
+        result = design_air_purifier(design_inputs_from_mapping(payload))
+        self.assertEqual(result.media_area_basis, "user-defined fixed media")
+        self.assertAlmostEqual(result.frontal_area_m2, 0.15)
+        self.assertAlmostEqual(result.required_media_area_m2, 1.2)
+
+    def test_filter_geometry_rejects_conflicting_area_inputs(self):
+        payload = {
+            "room": {"name": "Test", "length_m": 4, "width_m": 3, "height_m": 2.5},
+            "particle": {"target_clean_ach": 5, "single_pass_efficiency": 0.95},
+            "formaldehyde": {"target_clean_ach": 2, "single_pass_efficiency": 0.5},
+            "filter": {
+                "media_velocity_limit_m_s": 0.2,
+                "pleat_area_multiplier": 5,
+                "fixed_media_area_m2": 2,
+                "frontal_width_m": 0.4,
+                "frontal_height_m": 0.5,
+            },
+            "fan": {"free_airflow_m3h": 300, "shutoff_pressure_pa": 180},
+        }
+        with self.assertRaises(ValueError):
+            design_inputs_from_mapping(payload)
+
 
 if __name__ == "__main__":
     unittest.main()

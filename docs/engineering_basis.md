@@ -85,10 +85,11 @@ media area = fixed media area
 or, when panel dimensions are supplied:
 
 ```text
-media area = frontal width * frontal height * pleat area multiplier
+frontal area = frontal width * frontal height
+media area = frontal area * pleat area multiplier
 ```
 
-The resulting pressure drop is solved against the fan curve to estimate clean and loaded airflow. CADR is then calculated from the delivered airflow, not from the target airflow.
+For a flat filter, the pleat area multiplier is `1`, so frontal area and media area are the same. For a pleated filter, media area is larger than frontal area. The resulting pressure drop is solved against the fan curve to estimate clean and loaded airflow. CADR is then calculated from the delivered airflow, not from the target airflow.
 
 ## Formaldehyde Capacity
 

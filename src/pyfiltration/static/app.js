@@ -59,17 +59,32 @@ document.addEventListener("DOMContentLoaded", () => {
   setForm(defaultConfig);
   updateFanMode();
   updateFilterSizeMode();
+  updateComputedMediaArea();
   document.querySelectorAll("input[name='fan-mode']").forEach((input) => {
     input.addEventListener("change", updateFanMode);
   });
   document.querySelectorAll("input[name='filter-size-mode']").forEach((input) => {
     input.addEventListener("change", updateFilterSizeMode);
   });
+  document.querySelectorAll("input[name='filter-input-mode']").forEach((input) => {
+    input.addEventListener("change", updateFilterSizeMode);
+  });
+  [
+    "filter.frontal_width_m",
+    "filter.frontal_height_m",
+    "filter.pleat_area_multiplier"
+  ].forEach((path) => {
+    const input = document.querySelector(`[data-path='${path}']`);
+    if (input) {
+      input.addEventListener("input", updateComputedMediaArea);
+    }
+  });
   document.getElementById("calculate-button").addEventListener("click", calculate);
   document.getElementById("reset-button").addEventListener("click", () => {
     setForm(defaultConfig);
     updateFanMode();
     updateFilterSizeMode();
+    updateComputedMediaArea();
     calculate();
   });
   document.getElementById("export-button").addEventListener("click", exportJson);
@@ -88,6 +103,8 @@ function setForm(config) {
     (config.filter.frontal_width_m && config.filter.frontal_height_m)
   );
   document.querySelector(`input[name='filter-size-mode'][value='${fixedFilter ? "fixed" : "sizing"}']`).checked = true;
+  const inputMode = config.filter && config.filter.fixed_media_area_m2 ? "media-area" : "dimensions";
+  document.querySelector(`input[name='filter-input-mode'][value='${inputMode}']`).checked = true;
 }
 
 function readForm() {
@@ -111,6 +128,20 @@ function readForm() {
     payload.filter.fixed_media_area_m2 = null;
     payload.filter.frontal_width_m = null;
     payload.filter.frontal_height_m = null;
+  } else {
+    const inputMode = document.querySelector("input[name='filter-input-mode']:checked").value;
+    if (inputMode === "dimensions") {
+      payload.filter.fixed_media_area_m2 = null;
+      if (!payload.filter.frontal_width_m || !payload.filter.frontal_height_m) {
+        throw new Error("Enter frontal width and frontal height to evaluate a filter by dimensions.");
+      }
+    } else {
+      payload.filter.frontal_width_m = null;
+      payload.filter.frontal_height_m = null;
+      if (!payload.filter.fixed_media_area_m2) {
+        throw new Error("Enter known media area to evaluate a filter by media area.");
+      }
+    }
   }
   return payload;
 }
@@ -487,10 +518,31 @@ function updateFanMode() {
 }
 
 function updateFilterSizeMode() {
-  const mode = document.querySelector("input[name='filter-size-mode']:checked").value;
+  const sizeMode = document.querySelector("input[name='filter-size-mode']:checked").value;
+  const inputMode = document.querySelector("input[name='filter-input-mode']:checked").value;
   document.querySelectorAll("[data-filter-size-mode]").forEach((item) => {
-    item.classList.toggle("hidden", item.dataset.filterSizeMode !== mode);
+    const sizeMatches = item.dataset.filterSizeMode === sizeMode;
+    const inputMatches = !item.dataset.filterInputMode || item.dataset.filterInputMode === inputMode;
+    item.classList.toggle("hidden", !sizeMatches || !inputMatches);
   });
+  updateComputedMediaArea();
+}
+
+function updateComputedMediaArea() {
+  const target = document.getElementById("computed-media-area");
+  if (!target) {
+    return;
+  }
+  const width = numberOrNull(document.querySelector("[data-path='filter.frontal_width_m']").value);
+  const height = numberOrNull(document.querySelector("[data-path='filter.frontal_height_m']").value);
+  const multiplier = numberOrNull(document.querySelector("[data-path='filter.pleat_area_multiplier']").value);
+  if (!width || !height || !multiplier) {
+    target.textContent = "N/A";
+    return;
+  }
+  const frontalArea = width * height;
+  const mediaArea = frontalArea * multiplier;
+  target.textContent = `${fmt(frontalArea, 3)} m2 frontal x ${fmt(multiplier, 2)} = ${fmt(mediaArea, 3)} m2 media`;
 }
 
 function exportJson() {

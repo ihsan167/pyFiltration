@@ -93,7 +93,14 @@ The UI lets you edit room dimensions, particle targets, formaldehyde source and 
 Use the Filter section in either mode:
 
 - `Size required`: the calculator finds the media area needed to meet the CADR targets.
-- `Evaluate filter`: enter either media area in `m2`, or enter frontal width and height in `m` with the pleat multiplier. The calculator then estimates airflow, pressure drop, P-CADR, and F-CADR for that actual filter size.
+- `Evaluate filter`: enter frontal width and height in `m` with the pleat multiplier. The calculator computes media area and then estimates airflow, pressure drop, P-CADR, and F-CADR for that actual filter size.
+
+Important geometry terms:
+
+- `Frontal area = frontal width * frontal height`
+- `Media area = frontal area * pleat multiplier`
+- For a flat filter, pleat multiplier is `1`, so media area equals frontal area.
+- Use `Known media area` only when the supplier gives the unfolded filter media area directly.
 
 ## Example Python API
 

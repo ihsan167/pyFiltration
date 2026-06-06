@@ -124,6 +124,8 @@ class FilterSpec:
             _require_positive("filter.frontal_height_m", self.frontal_height_m)
         if (self.frontal_width_m is None) != (self.frontal_height_m is None):
             raise ValueError("filter.frontal_width_m and filter.frontal_height_m must be provided together")
+        if self.fixed_media_area_m2 is not None and self.frontal_width_m is not None:
+            raise ValueError("filter requires either fixed_media_area_m2 or frontal dimensions, not both")
 
     @property
     def supplied_frontal_area_m2(self) -> float | None:

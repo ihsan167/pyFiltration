@@ -167,6 +167,10 @@ input:focus {
   gap: 6px;
 }
 
+.segmented.compact {
+  max-width: 100%;
+}
+
 .segmented label {
   display: flex;
   align-items: center;
@@ -182,6 +186,28 @@ input:focus {
 .segmented input {
   width: auto;
   min-height: auto;
+}
+
+.formula-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px solid #dbe3ec;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.formula-note span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.formula-note strong {
+  text-align: right;
 }
 
 .workspace {
