@@ -74,6 +74,20 @@ You can also run the module directly:
 python -m pyfiltration.cli design examples/home_air_purifier.json --out reports/example
 ```
 
+## Run The Local UI
+
+```powershell
+python -m pyfiltration.cli ui
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+The UI lets you edit room dimensions, particle targets, formaldehyde source and media assumptions, filter pressure drop, fan curve, and safety factor. It calculates P-CADR, F-CADR, media area, pressure margin, ACH, decay time, and formaldehyde service life, then draws engineering charts in the browser.
+
 ## Example Python API
 
 ```python

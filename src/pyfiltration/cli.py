@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import webbrowser
 from pathlib import Path
 
 from .calculations import cadr_from_decay, decay_rate_from_samples
@@ -31,11 +32,18 @@ def main(argv: list[str] | None = None) -> int:
     lab_parser.add_argument("--time-unit", choices=["s", "min", "h"], default="min")
     lab_parser.add_argument("--background", type=float, default=0.0)
 
+    ui_parser = subparsers.add_parser("ui", help="Run the local browser UI.")
+    ui_parser.add_argument("--host", default="127.0.0.1")
+    ui_parser.add_argument("--port", type=int, default=8000)
+    ui_parser.add_argument("--open", action="store_true", help="Open the UI in the default browser.")
+
     args = parser.parse_args(argv)
     if args.command == "design":
         return _run_design(args)
     if args.command == "lab-cadr":
         return _run_lab_cadr(args)
+    if args.command == "ui":
+        return _run_ui(args)
     parser.error("unknown command")
     return 2
 
@@ -46,12 +54,8 @@ def _run_design(args: argparse.Namespace) -> int:
     json_path, md_path = write_summary_files(inputs, result, args.out)
     plot_paths = []
     if not args.no_plots:
-        try:
-            from .visualization import write_plots
-        except ModuleNotFoundError as exc:
-            raise ModuleNotFoundError(
-                "Plotting requires matplotlib. Install the package with `python -m pip install -e .`."
-            ) from exc
+        from .visualization import write_plots
+
         plot_paths = write_plots(inputs, result, args.out)
 
     print(f"Room: {inputs.room.name}")
@@ -95,6 +99,16 @@ def _run_lab_cadr(args: argparse.Namespace) -> int:
     print(f"Natural decay: {natural_decay:.4f} 1/h")
     print(f"Total decay:   {total_decay:.4f} 1/h")
     print(f"CADR:          {cadr:.2f} m3/h ({m3h_to_cfm(cadr):.1f} cfm)")
+    return 0
+
+
+def _run_ui(args: argparse.Namespace) -> int:
+    from .webapp import run_server
+
+    url = f"http://{args.host}:{args.port}"
+    if args.open:
+        webbrowser.open(url)
+    run_server(host=args.host, port=args.port)
     return 0
 
 

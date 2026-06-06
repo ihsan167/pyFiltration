@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>pyFiltration UI</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>pyFiltration</h1>
+        <p>Home air purifier P-CADR and F-CADR sizing</p>
+      </div>
+      <div class="top-actions">
+        <button id="reset-button" type="button" class="secondary">Reset</button>
+        <button id="export-button" type="button" class="secondary">Export JSON</button>
+        <button id="calculate-button" type="button">Calculate</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="input-panel">
+        <form id="design-form">
+          <section>
+            <h2>Room</h2>
+            <label>
+              Name
+              <input data-path="room.name" type="text">
+            </label>
+            <div class="field-grid">
+              <label>
+                Length, m
+                <input data-path="room.length_m" type="number" step="0.1" min="0.1">
+              </label>
+              <label>
+                Width, m
+                <input data-path="room.width_m" type="number" step="0.1" min="0.1">
+              </label>
+              <label>
+                Height, m
+                <input data-path="room.height_m" type="number" step="0.1" min="0.1">
+              </label>
+              <label>
+                Mixing
+                <input data-path="room.mixing_effectiveness" type="number" step="0.01" min="0" max="1">
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <h2>Particles</h2>
+            <div class="field-grid">
+              <label>
+                Target clean ACH
+                <input data-path="particle.target_clean_ach" type="number" step="0.1" min="0">
+              </label>
+              <label>
+                Existing removal ACH
+                <input data-path="particle.existing_removal_ach" type="number" step="0.1" min="0">
+              </label>
+              <label>
+                Single-pass efficiency
+                <input data-path="particle.single_pass_efficiency" type="number" step="0.01" min="0" max="1">
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <h2>Formaldehyde</h2>
+            <div class="field-grid">
+              <label>
+                Target clean ACH
+                <input data-path="formaldehyde.target_clean_ach" type="number" step="0.1" min="0">
+              </label>
+              <label>
+                Existing removal ACH
+                <input data-path="formaldehyde.existing_removal_ach" type="number" step="0.1" min="0">
+              </label>
+              <label>
+                Target, ug/m3
+                <input data-path="formaldehyde.target_concentration_ug_m3" type="number" step="1" min="0">
+              </label>
+              <label>
+                Source, ug/h
+                <input data-path="formaldehyde.source_generation_ug_h" type="number" step="10" min="0">
+              </label>
+              <label>
+                Outdoor, ug/m3
+                <input data-path="formaldehyde.outdoor_concentration_ug_m3" type="number" step="1" min="0">
+              </label>
+              <label>
+                Ventilation, m3/h
+                <input data-path="formaldehyde.ventilation_m3h" type="number" step="1" min="0">
+              </label>
+              <label>
+                Single-pass efficiency
+                <input data-path="formaldehyde.single_pass_efficiency" type="number" step="0.01" min="0" max="1">
+              </label>
+              <label>
+                Kinetic rate, 1/s
+                <input data-path="formaldehyde.first_order_rate_s" type="number" step="0.001" min="0">
+              </label>
+              <label>
+                Bed depth, m
+                <input data-path="formaldehyde.carbon_bed_depth_m" type="number" step="0.001" min="0">
+              </label>
+              <label>
+                Bed porosity
+                <input data-path="formaldehyde.bed_porosity" type="number" step="0.01" min="0" max="1">
+              </label>
+              <label>
+                Challenge, ug/m3
+                <input data-path="formaldehyde.challenge_concentration_ug_m3" type="number" step="1" min="0">
+              </label>
+              <label>
+                Carbon mass, g
+                <input data-path="formaldehyde.carbon_mass_g" type="number" step="10" min="0">
+              </label>
+              <label>
+                Capacity, mg/g
+                <input data-path="formaldehyde.capacity_mg_per_g" type="number" step="0.1" min="0">
+              </label>
+              <label>
+                Utilization
+                <input data-path="formaldehyde.capacity_utilization" type="number" step="0.01" min="0" max="1">
+              </label>
+              <label>
+                Temperature, C
+                <input data-path="formaldehyde.temperature_c" type="number" step="1">
+              </label>
+              <label>
+                RH, percent
+                <input data-path="formaldehyde.relative_humidity_percent" type="number" step="1" min="0" max="100">
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <h2>Filter</h2>
+            <div class="field-grid">
+              <label>
+                Velocity limit, m/s
+                <input data-path="filter.media_velocity_limit_m_s" type="number" step="0.01" min="0">
+              </label>
+              <label>
+                Pleat multiplier
+                <input data-path="filter.pleat_area_multiplier" type="number" step="0.1" min="1">
+              </label>
+              <label>
+                Bypass fraction
+                <input data-path="filter.bypass_fraction" type="number" step="0.01" min="0" max="1">
+              </label>
+              <label>
+                Ref delta P, Pa
+                <input data-path="filter.pressure_drop_ref_pa" type="number" step="1" min="0">
+              </label>
+              <label>
+                Ref velocity, m/s
+                <input data-path="filter.pressure_drop_ref_velocity_m_s" type="number" step="0.01" min="0">
+              </label>
+              <label>
+                Delta P exponent
+                <input data-path="filter.pressure_drop_exponent" type="number" step="0.05" min="0">
+              </label>
+              <label>
+                Loaded multiplier
+                <input data-path="filter.loaded_pressure_drop_multiplier" type="number" step="0.1" min="1">
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <h2>Fan</h2>
+            <div class="segmented">
+              <label><input name="fan-mode" value="curve" type="radio" checked> Curve</label>
+              <label><input name="fan-mode" value="fixed" type="radio"> Fixed flow</label>
+            </div>
+            <div class="field-grid">
+              <label data-mode="curve">
+                Free airflow, m3/h
+                <input data-path="fan.free_airflow_m3h" type="number" step="1" min="0">
+              </label>
+              <label data-mode="curve">
+                Shutoff pressure, Pa
+                <input data-path="fan.shutoff_pressure_pa" type="number" step="1" min="0">
+              </label>
+              <label data-mode="curve">
+                Curve exponent
+                <input data-path="fan.curve_exponent" type="number" step="0.1" min="0">
+              </label>
+              <label data-mode="fixed">
+                Fixed airflow, m3/h
+                <input data-path="fan.fixed_airflow_m3h" type="number" step="1" min="0">
+              </label>
+              <label>
+                System pressure, Pa
+                <input data-path="fan.system_pressure_pa" type="number" step="1" min="0">
+              </label>
+              <label>
+                Fan power, W
+                <input data-path="fan.power_w" type="number" step="1" min="0">
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <h2>Design</h2>
+            <label>
+              Safety factor
+              <input data-path="safety_factor" type="number" step="0.01" min="0.1">
+            </label>
+          </section>
+        </form>
+      </aside>
+
+      <section class="workspace">
+        <div id="status" class="status">Ready</div>
+
+        <section class="metric-grid" id="metrics"></section>
+
+        <section class="summary-panel">
+          <h2>Design Summary</h2>
+          <div id="summary"></div>
+        </section>
+
+        <section class="chart-grid">
+          <div class="chart-panel">
+            <h2>CADR Breakdown</h2>
+            <div id="cadr-chart" class="chart"></div>
+          </div>
+          <div class="chart-panel">
+            <h2>Fan Pressure</h2>
+            <div id="fan-chart" class="chart"></div>
+          </div>
+          <div class="chart-panel">
+            <h2>Filter Area</h2>
+            <div id="area-chart" class="chart"></div>
+          </div>
+          <div class="chart-panel">
+            <h2>Room Decay</h2>
+            <div id="decay-chart" class="chart"></div>
+          </div>
+          <div class="chart-panel wide">
+            <h2>Formaldehyde Capacity</h2>
+            <div id="capacity-chart" class="chart"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

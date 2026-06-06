@@ -12,6 +12,10 @@ from .models import DesignInputs, FanSpec, FilterSpec, FormaldehydeSpec, Particl
 def load_design_config(path: str | Path) -> DesignInputs:
     path = Path(path)
     data = _load_mapping(path)
+    return design_inputs_from_mapping(data)
+
+
+def design_inputs_from_mapping(data: dict[str, Any]) -> DesignInputs:
     return DesignInputs(
         room=RoomSpec(**data["room"]),
         particle=ParticleSpec(**data["particle"]),
