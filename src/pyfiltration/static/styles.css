@@ -132,10 +132,61 @@ form section {
 
 label {
   display: grid;
+  position: relative;
   gap: 5px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+}
+
+label[data-help]::before {
+  content: "?";
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #b9c4d0;
+  border-radius: 50%;
+  color: #5f6b77;
+  background: #ffffff;
+  font-size: 11px;
+  line-height: 1;
+}
+
+label[data-help]::after {
+  content: attr(data-help);
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 5;
+  width: min(260px, calc(100vw - 36px));
+  padding: 9px 10px;
+  border: 1px solid #c9d3df;
+  border-radius: 6px;
+  color: #202b36;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(18, 27, 38, 0.16);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.field-grid label[data-help]:nth-child(even)::after {
+  right: 0;
+  left: auto;
+}
+
+label[data-help]:hover::after,
+label[data-help]:focus-within::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .help-text {

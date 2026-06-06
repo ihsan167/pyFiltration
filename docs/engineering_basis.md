@@ -91,6 +91,8 @@ media area = frontal area * pleat area multiplier
 
 For a flat filter, the pleat area multiplier is `1`, so frontal area and media area are the same. For a pleated filter, media area is larger than frontal area. The resulting pressure drop is solved against the fan curve to estimate clean and loaded airflow. CADR is then calculated from the delivered airflow, not from the target airflow.
 
+The browser UI accepts filter dimensions in `mm` and known media area in `mm2`. The calculation engine converts those values to `m` and `m2` internally.
+
 ## Formaldehyde Capacity
 
 F-CADR is an initial or current performance value. Sorbent media can lose capacity as it loads. The service-life estimate is:

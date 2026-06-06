@@ -151,16 +151,16 @@
             <p class="help-text" data-filter-size-mode="fixed" data-filter-input-mode="media-area">Use known media area only when the supplier gives the unfolded filter media area.</p>
             <div class="field-grid">
               <label data-filter-size-mode="fixed" data-filter-input-mode="media-area">
-                Media area, m2
-                <input data-path="filter.fixed_media_area_m2" type="number" step="0.001" min="0">
+                Known media area, mm2
+                <input data-path="filter.fixed_media_area_m2" type="number" step="100" min="0">
               </label>
               <label data-filter-size-mode="fixed" data-filter-input-mode="dimensions">
-                Frontal width, m
-                <input data-path="filter.frontal_width_m" type="number" step="0.001" min="0">
+                Frontal width, mm
+                <input data-path="filter.frontal_width_m" type="number" step="1" min="0">
               </label>
               <label data-filter-size-mode="fixed" data-filter-input-mode="dimensions">
-                Frontal height, m
-                <input data-path="filter.frontal_height_m" type="number" step="0.001" min="0">
+                Frontal height, mm
+                <input data-path="filter.frontal_height_m" type="number" step="1" min="0">
               </label>
               <label>
                 Velocity limit, m/s
@@ -257,7 +257,7 @@
             </div>
             <div>
               <strong>Filter Size</strong>
-              <span>Frontal area is width x height. Media area is frontal area x pleat multiplier unless you enter a known unfolded media area.</span>
+              <span>The UI accepts filter dimensions in mm. Frontal area is width x height. Media area is frontal area x pleat multiplier unless you enter a known unfolded media area.</span>
             </div>
             <div>
               <strong>Pressure</strong>

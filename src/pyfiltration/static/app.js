@@ -55,7 +55,70 @@ const defaultConfig = {
 let latestPayload = null;
 let latestResult = null;
 
+const mm2PerM2 = 1000000;
+const mmPerM = 1000;
+
+const inputConversions = {
+  "filter.fixed_media_area_m2": {
+    toUi: (value) => value * mm2PerM2,
+    fromUi: (value) => value / mm2PerM2
+  },
+  "filter.frontal_width_m": {
+    toUi: (value) => value * mmPerM,
+    fromUi: (value) => value / mmPerM
+  },
+  "filter.frontal_height_m": {
+    toUi: (value) => value * mmPerM,
+    fromUi: (value) => value / mmPerM
+  }
+};
+
+const fieldHelp = {
+  "room.name": "A label for this room or test case.",
+  "room.length_m": "Room internal length in metres. Used with width and height to calculate room volume.",
+  "room.width_m": "Room internal width in metres. Used to calculate floor area and volume.",
+  "room.height_m": "Room internal height in metres. Typical homes are about 2.4 to 3.0 m.",
+  "room.mixing_effectiveness": "How well clean air mixes in the room. Use 1.0 for ideal mixing; 0.7 to 0.9 is common for real placement.",
+  "particle.target_clean_ach": "Target equivalent clean air changes per hour for particle removal.",
+  "particle.existing_removal_ach": "Particle removal already provided by deposition, ventilation, or other systems.",
+  "particle.single_pass_efficiency": "Fraction of particles captured in one pass through the filter. Use a decimal, for example 0.97.",
+  "formaldehyde.target_clean_ach": "Target equivalent clean air changes per hour for formaldehyde removal.",
+  "formaldehyde.existing_removal_ach": "Formaldehyde removal already provided by ventilation, surface loss, or other systems.",
+  "formaldehyde.target_concentration_ug_m3": "Indoor formaldehyde concentration target in micrograms per cubic metre.",
+  "formaldehyde.source_generation_ug_h": "Estimated continuous formaldehyde emission rate from furniture, finishes, or materials.",
+  "formaldehyde.outdoor_concentration_ug_m3": "Outdoor formaldehyde concentration entering through ventilation.",
+  "formaldehyde.ventilation_m3h": "Outdoor air ventilation flow rate into the room.",
+  "formaldehyde.single_pass_efficiency": "Fraction of formaldehyde removed in one pass through the gas media. Use supplier or test data when possible.",
+  "formaldehyde.first_order_rate_s": "Optional gas-media kinetic rate. Leave blank when using measured single-pass efficiency.",
+  "formaldehyde.carbon_bed_depth_m": "Activated carbon or gas-media bed depth in metres. Used only with kinetic-rate estimation.",
+  "formaldehyde.bed_porosity": "Void fraction of the gas-media bed. Typical packed beds are often around 0.35 to 0.55.",
+  "formaldehyde.challenge_concentration_ug_m3": "Formaldehyde concentration used for capacity and capture-rate estimates.",
+  "formaldehyde.carbon_mass_g": "Mass of activated carbon or gas adsorbent in grams.",
+  "formaldehyde.capacity_mg_per_g": "Usable formaldehyde holding capacity per gram of adsorbent before breakthrough.",
+  "formaldehyde.capacity_utilization": "Fraction of theoretical capacity expected to be usable in the product.",
+  "formaldehyde.temperature_c": "Operating air temperature in Celsius.",
+  "formaldehyde.relative_humidity_percent": "Operating relative humidity. High humidity can reduce formaldehyde adsorption.",
+  "filter.fixed_media_area_m2": "Known unfolded filter media area in mm2. Use this only when the supplier gives actual media area.",
+  "filter.frontal_width_m": "Visible filter opening width in mm, measured across the front face.",
+  "filter.frontal_height_m": "Visible filter opening height in mm, measured across the front face.",
+  "filter.media_velocity_limit_m_s": "Maximum air velocity through the media. Lower values reduce pressure drop and can improve efficiency.",
+  "filter.pleat_area_multiplier": "How many times larger the pleated media area is than the frontal area. Use 1 for a flat filter.",
+  "filter.bypass_fraction": "Fraction of airflow leaking around the filter instead of passing through it.",
+  "filter.pressure_drop_ref_pa": "Clean filter pressure drop measured at the reference media velocity.",
+  "filter.pressure_drop_ref_velocity_m_s": "Media velocity used for the reference pressure-drop value.",
+  "filter.pressure_drop_exponent": "Pressure-drop scaling exponent. Around 1.0 is linear; many filters are about 1.2 to 1.6.",
+  "filter.loaded_pressure_drop_multiplier": "End-of-life pressure-drop multiplier compared with the clean filter.",
+  "fan.free_airflow_m3h": "Fan airflow at zero pressure drop.",
+  "fan.shutoff_pressure_pa": "Maximum static pressure when fan airflow is zero.",
+  "fan.curve_exponent": "Shape of the fan pressure-flow curve. Use about 1.5 to 2.0 when exact data is unknown.",
+  "fan.fixed_airflow_m3h": "Known delivered airflow through the filter when using fixed-flow mode.",
+  "fan.system_pressure_pa": "Additional housing, grille, duct, and outlet pressure losses besides the filter.",
+  "fan.power_w": "Electrical fan power in watts. Used for reporting.",
+  "safety_factor": "Multiplier applied to required CADR during sizing. Use above 1.0 to add design margin."
+};
+
 document.addEventListener("DOMContentLoaded", () => {
+  applyFieldHelp();
   setForm(defaultConfig);
   updateFanMode();
   updateFilterSizeMode();
@@ -93,7 +156,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function setForm(config) {
   document.querySelectorAll("[data-path]").forEach((input) => {
-    const value = getPath(config, input.dataset.path);
+    const path = input.dataset.path;
+    const conversion = inputConversions[path];
+    const rawValue = getPath(config, path);
+    const value = rawValue === null || rawValue === undefined || !conversion ? rawValue : conversion.toUi(rawValue);
     input.value = value === null || value === undefined ? "" : value;
   });
   const fixed = config.fan && config.fan.fixed_airflow_m3h;
@@ -111,7 +177,9 @@ function readForm() {
   const payload = {};
   document.querySelectorAll("[data-path]").forEach((input) => {
     const path = input.dataset.path;
-    const value = input.type === "number" ? numberOrNull(input.value) : input.value;
+    const conversion = inputConversions[path];
+    const rawValue = input.type === "number" ? numberOrNull(input.value) : input.value;
+    const value = rawValue === null || !conversion ? rawValue : conversion.fromUi(rawValue);
     setPath(payload, path, value);
   });
 
@@ -186,7 +254,7 @@ function renderMetrics(result) {
   const metrics = [
     ["Loaded P-CADR", fmt(result.loaded_p_cadr_m3h, 1), "m3/h"],
     ["Loaded F-CADR", fmt(result.loaded_f_cadr_m3h, 1), "m3/h"],
-    ["Media area", fmt(result.required_media_area_m2, 3), "m2"],
+    ["Media area", fmt(result.required_media_area_m2 * mm2PerM2, 0), "mm2"],
     ["Pressure margin", result.pressure_margin_at_design_pa === null ? "Fixed" : fmt(result.pressure_margin_at_design_pa, 1), "Pa at design flow"],
     ["Loaded P-ACH", fmt(result.loaded_p_ach, 2), "1/h"],
     ["Loaded F-ACH", fmt(result.loaded_f_ach, 2), "1/h"],
@@ -231,9 +299,9 @@ function renderSummary(inputs, result) {
           <td>${fmt(result.loaded_airflow_m3h, 1)}</td>
         </tr>
         <tr>
-          <td>Media area, m2</td>
-          <td>${fmt(result.minimum_required_media_area_m2, 3)}</td>
-          <td colspan="2">${fmt(result.required_media_area_m2, 3)} used</td>
+          <td>Media area, mm2</td>
+          <td>${fmt(result.minimum_required_media_area_m2 * mm2PerM2, 0)}</td>
+          <td colspan="2">${fmt(result.required_media_area_m2 * mm2PerM2, 0)} used</td>
         </tr>
         <tr>
           <td>Pressure drop, Pa</td>
@@ -243,7 +311,7 @@ function renderSummary(inputs, result) {
         </tr>
       </tbody>
     </table>
-    <p class="warnings">Media basis: ${escapeHtml(result.media_area_basis)}. Room volume: ${fmt(result.room_volume_m3, 2)} m3. Frontal area: ${fmt(result.frontal_area_m2, 3)} m2. Formaldehyde efficiency used: ${fmt(result.formaldehyde_efficiency_used, 3)}.</p>
+    <p class="warnings">Media basis: ${escapeHtml(result.media_area_basis)}. Room volume: ${fmt(result.room_volume_m3, 2)} m3. Frontal area: ${fmt(result.frontal_area_m2 * mm2PerM2, 0)} mm2. Formaldehyde efficiency used: ${fmt(result.formaldehyde_efficiency_used, 3)}.</p>
     ${warnings}
   `;
 }
@@ -300,7 +368,7 @@ function renderFanChart(inputs, result) {
 function renderAreaChart(inputs, result) {
   const filter = inputs.filter;
   const x = range(0.08, 0.40, 64);
-  const area = x.map((v) => result.design_airflow_m3h / 3600 / v);
+  const area = x.map((v) => result.design_airflow_m3h / 3600 / v * mm2PerM2);
   const cleanDp = x.map((v) => filter.pressure_drop_ref_pa * Math.pow(v / filter.pressure_drop_ref_velocity_m_s, filter.pressure_drop_exponent));
   const loadedDp = cleanDp.map((value) => value * filter.loaded_pressure_drop_multiplier);
   lineChart("area-chart", {
@@ -311,7 +379,7 @@ function renderAreaChart(inputs, result) {
       { name: "Loaded delta P", color: "#d9483b", values: loadedDp, axis: "right", dash: "6 4" }
     ],
     xLabel: "Media velocity (m/s)",
-    yLabel: "Media area (m2)",
+    yLabel: "Media area (mm2)",
     y2Label: "Filter delta P (Pa)",
     vlines: [{ x: filter.media_velocity_limit_m_s, color: "#525252", label: "Limit" }]
   });
@@ -540,9 +608,25 @@ function updateComputedMediaArea() {
     target.textContent = "N/A";
     return;
   }
-  const frontalArea = width * height;
-  const mediaArea = frontalArea * multiplier;
-  target.textContent = `${fmt(frontalArea, 3)} m2 frontal x ${fmt(multiplier, 2)} = ${fmt(mediaArea, 3)} m2 media`;
+  const frontalAreaMm2 = width * height;
+  const mediaAreaMm2 = frontalAreaMm2 * multiplier;
+  target.textContent = `${fmt(frontalAreaMm2, 0)} mm2 frontal x ${fmt(multiplier, 2)} = ${fmt(mediaAreaMm2, 0)} mm2 media`;
+}
+
+function applyFieldHelp() {
+  document.querySelectorAll("[data-path]").forEach((input) => {
+    const help = fieldHelp[input.dataset.path];
+    if (!help) {
+      return;
+    }
+    const label = input.closest("label");
+    if (!label) {
+      return;
+    }
+    label.dataset.help = help;
+    label.title = help;
+    input.title = help;
+  });
 }
 
 function exportJson() {
