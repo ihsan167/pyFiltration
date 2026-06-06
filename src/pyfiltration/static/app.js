@@ -54,6 +54,7 @@ const defaultConfig = {
 
 let latestPayload = null;
 let latestResult = null;
+let tooltipElement = null;
 
 const mm2PerM2 = 1000000;
 const mmPerM = 1000;
@@ -614,6 +615,11 @@ function updateComputedMediaArea() {
 }
 
 function applyFieldHelp() {
+  tooltipElement = document.createElement("div");
+  tooltipElement.className = "field-tooltip";
+  tooltipElement.setAttribute("role", "tooltip");
+  document.body.appendChild(tooltipElement);
+
   document.querySelectorAll("[data-path]").forEach((input) => {
     const help = fieldHelp[input.dataset.path];
     if (!help) {
@@ -624,9 +630,52 @@ function applyFieldHelp() {
       return;
     }
     label.dataset.help = help;
-    label.title = help;
-    input.title = help;
+    label.addEventListener("mouseenter", () => showFieldTooltip(label));
+    label.addEventListener("mouseleave", hideFieldTooltip);
+    label.addEventListener("focusin", () => showFieldTooltip(label));
+    label.addEventListener("focusout", hideFieldTooltip);
   });
+  window.addEventListener("scroll", hideFieldTooltip, true);
+  window.addEventListener("resize", hideFieldTooltip);
+}
+
+function showFieldTooltip(label) {
+  if (!tooltipElement || !label.dataset.help) {
+    return;
+  }
+  tooltipElement.textContent = label.dataset.help;
+  tooltipElement.classList.add("visible");
+  tooltipElement.style.left = "0px";
+  tooltipElement.style.top = "0px";
+
+  const margin = 12;
+  const gap = 8;
+  const labelRect = label.getBoundingClientRect();
+  const tooltipRect = tooltipElement.getBoundingClientRect();
+  let left = labelRect.left;
+  let top = labelRect.bottom + gap;
+
+  if (left + tooltipRect.width > window.innerWidth - margin) {
+    left = window.innerWidth - tooltipRect.width - margin;
+  }
+  if (left < margin) {
+    left = margin;
+  }
+  if (top + tooltipRect.height > window.innerHeight - margin) {
+    top = labelRect.top - tooltipRect.height - gap;
+  }
+  if (top < margin) {
+    top = margin;
+  }
+
+  tooltipElement.style.left = `${left}px`;
+  tooltipElement.style.top = `${top}px`;
+}
+
+function hideFieldTooltip() {
+  if (tooltipElement) {
+    tooltipElement.classList.remove("visible");
+  }
 }
 
 function exportJson() {
