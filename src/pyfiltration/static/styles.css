@@ -113,6 +113,7 @@ form {
 
 form section,
 .basis-panel,
+.output-notes,
 .summary-panel,
 .chart-panel,
 .metric {
@@ -267,8 +268,23 @@ input:focus {
   padding: 14px;
 }
 
-.basis-panel h2 {
+.basis-panel h2,
+.output-notes h2 {
   margin-bottom: 10px;
+}
+
+.output-notes {
+  padding: 14px;
+}
+
+.output-notes p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.output-notes strong {
+  color: var(--ink);
 }
 
 .basis-grid {
@@ -302,12 +318,12 @@ input:focus {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 10px;
 }
 
 .metric {
-  min-height: 86px;
+  min-height: 160px;
   padding: 12px;
 }
 
@@ -327,6 +343,16 @@ input:focus {
   margin-top: 4px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.metric .explain {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #edf0f4;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .summary-panel {
@@ -439,7 +465,7 @@ input:focus {
   }
 
   .metric-grid {
-    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
 
   .basis-grid {

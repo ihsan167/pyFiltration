@@ -253,20 +253,61 @@ function renderResults(inputs, result) {
 
 function renderMetrics(result) {
   const metrics = [
-    ["Loaded P-CADR", fmt(result.loaded_p_cadr_m3h, 1), "m3/h"],
-    ["Loaded F-CADR", fmt(result.loaded_f_cadr_m3h, 1), "m3/h"],
-    ["Media area", fmt(result.required_media_area_m2 * mm2PerM2, 0), "mm2"],
-    ["Pressure margin", result.pressure_margin_at_design_pa === null ? "Fixed" : fmt(result.pressure_margin_at_design_pa, 1), "Pa at design flow"],
-    ["Loaded P-ACH", fmt(result.loaded_p_ach, 2), "1/h"],
-    ["Loaded F-ACH", fmt(result.loaded_f_ach, 2), "1/h"],
-    ["Particle 80% time", fmt(result.p_time_to_80_percent_reduction_min, 1), "min"],
-    ["HCHO life", result.formaldehyde_service_life_h === null ? "N/A" : fmt(result.formaldehyde_service_life_h, 0), "operating h"]
+    [
+      "Loaded P-CADR",
+      fmt(result.loaded_p_cadr_m3h, 1),
+      "m3/h",
+      "Particle clean-air delivery with a loaded filter: airflow x particle efficiency x bypass correction x room mixing."
+    ],
+    [
+      "Loaded F-CADR",
+      fmt(result.loaded_f_cadr_m3h, 1),
+      "m3/h",
+      "Formaldehyde clean-air delivery with a loaded filter: airflow x gas-media efficiency x bypass correction x room mixing."
+    ],
+    [
+      "Media area",
+      fmt(result.required_media_area_m2 * mm2PerM2, 0),
+      "mm2",
+      "Unfolded filter media area used. With dimensions: frontal width x frontal height x pleat multiplier."
+    ],
+    [
+      "Pressure margin",
+      result.pressure_margin_at_design_pa === null ? "Fixed" : fmt(result.pressure_margin_at_design_pa, 1),
+      "Pa at design flow",
+      "Fan pressure available at design airflow minus loaded system pressure. Positive margin means the fan can meet the pressure demand."
+    ],
+    [
+      "Loaded P-ACH",
+      fmt(result.loaded_p_ach, 2),
+      "1/h",
+      "Particle equivalent clean air changes per hour: loaded P-CADR divided by room volume."
+    ],
+    [
+      "Loaded F-ACH",
+      fmt(result.loaded_f_ach, 2),
+      "1/h",
+      "Formaldehyde equivalent clean air changes per hour: loaded F-CADR divided by room volume."
+    ],
+    [
+      "Particle 80% time",
+      fmt(result.p_time_to_80_percent_reduction_min, 1),
+      "min",
+      "Estimated time for particle concentration to fall to 20% of the starting level using loaded P-CADR and existing removal."
+    ],
+    [
+      "HCHO life",
+      result.formaldehyde_service_life_h === null ? "N/A" : fmt(result.formaldehyde_service_life_h, 0),
+      "operating h",
+      "Estimated gas-media operating life from carbon mass, usable HCHO capacity, airflow, concentration, and capture efficiency."
+    ]
   ];
-  document.getElementById("metrics").innerHTML = metrics.map(([label, value, sub]) => `
+  document.getElementById("metrics").innerHTML = metrics.map(([label, value, sub, explanation]) => `
     <div class="metric">
       <div class="label">${escapeHtml(label)}</div>
       <div class="value">${escapeHtml(value)}</div>
       <div class="sub">${escapeHtml(sub)}</div>
+      <div class="explain">${escapeHtml(explanation)}</div>
     </div>
   `).join("");
 }
