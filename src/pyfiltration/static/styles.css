@@ -394,16 +394,24 @@ input:focus {
   font-weight: 700;
 }
 
-.metric .value {
+.metric .value-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 7px;
+}
+
+.metric .value {
   font-size: 22px;
   font-weight: 800;
+  line-height: 1.05;
 }
 
 .metric .sub {
-  margin-top: 4px;
   color: var(--muted);
   font-size: 12px;
+  line-height: 1.1;
 }
 
 .metric .explain {

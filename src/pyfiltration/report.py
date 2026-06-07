@@ -56,6 +56,7 @@ def _summary_markdown(inputs: DesignInputs, result: DesignResult) -> str:
 
 ## Filter And Fan
 
+- Requirement basis: {result.requirement_basis}
 - Media area basis: {result.media_area_basis}
 - Design airflow: {result.design_airflow_m3h:.1f} m3/h
 - Clean airflow: {result.clean_airflow_m3h:.1f} m3/h

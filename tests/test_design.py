@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import asdict
 
 from pyfiltration.config import design_inputs_from_mapping
 from pyfiltration.config import load_design_config
@@ -14,6 +15,7 @@ class DesignTests(unittest.TestCase):
         self.assertGreater(result.required_media_area_m2, 0)
         self.assertGreater(result.frontal_area_m2, 0)
         self.assertGreater(result.formaldehyde_service_life_h or 0, 0)
+        self.assertEqual(result.requirement_basis, "room-derived targets")
 
     def test_mapping_loader_supports_ui_payload(self):
         payload = {
@@ -169,6 +171,25 @@ class DesignTests(unittest.TestCase):
         }
         with self.assertRaises(ValueError):
             design_inputs_from_mapping(payload)
+
+    def test_direct_cadr_requirements_override_room_targets(self):
+        inputs = load_design_config("examples/home_air_purifier.json")
+        payload = {
+            "room": asdict(inputs.room),
+            "particle": asdict(inputs.particle),
+            "formaldehyde": asdict(inputs.formaldehyde),
+            "filter": asdict(inputs.filter),
+            "fan": asdict(inputs.fan),
+            "safety_factor": inputs.safety_factor,
+            "required_p_cadr_m3h": 325.0,
+            "required_f_cadr_m3h": 180.0,
+        }
+        result = design_air_purifier(design_inputs_from_mapping(payload))
+        self.assertEqual(result.requirement_basis, "direct CADR requirements")
+        self.assertAlmostEqual(result.required_p_cadr_m3h, 325.0)
+        self.assertAlmostEqual(result.required_f_cadr_m3h, 180.0)
+        self.assertLess(result.loaded_p_cadr_m3h, result.required_p_cadr_m3h)
+        self.assertTrue(result.warnings)
 
 
 if __name__ == "__main__":

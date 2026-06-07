@@ -24,12 +24,12 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
     hcho = inputs.formaldehyde
     volume = room.volume_m3
 
-    required_p = required_cadr_for_clean_ach(
+    room_required_p = required_cadr_for_clean_ach(
         volume,
         particle.target_clean_ach,
         particle.existing_removal_ach,
     )
-    required_f_ach = required_cadr_for_clean_ach(
+    room_required_f_ach = required_cadr_for_clean_ach(
         volume,
         hcho.target_clean_ach,
         hcho.existing_removal_ach,
@@ -44,7 +44,14 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
             outdoor_concentration_ug_m3=hcho.outdoor_concentration_ug_m3,
             natural_loss_ach=hcho.existing_removal_ach,
         )
-    required_f = max(required_f_ach, required_f_concentration)
+    room_required_f = max(room_required_f_ach, required_f_concentration)
+    required_p = inputs.required_p_cadr_m3h or room_required_p
+    required_f = inputs.required_f_cadr_m3h or room_required_f
+    requirement_basis = (
+        "direct CADR requirements"
+        if inputs.required_p_cadr_m3h is not None or inputs.required_f_cadr_m3h is not None
+        else "room-derived targets"
+    )
 
     design_required_p = required_p * inputs.safety_factor
     design_required_f = required_f * inputs.safety_factor
@@ -65,7 +72,11 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
 
         area_by_velocity = next_design_airflow / 3600.0 / filt.media_velocity_limit_m_s
         area_by_pressure = _media_area_required_by_pressure(next_design_airflow, fan, filt, loaded=True)
-        next_required_media_area = max(area_by_velocity, area_by_pressure)
+        next_required_media_area = (
+            max(area_by_velocity, area_by_pressure)
+            if math.isfinite(area_by_pressure)
+            else area_by_velocity
+        )
         next_media_area = supplied_media_area if supplied_media_area is not None else next_required_media_area
 
         next_hcho_efficiency = _formaldehyde_efficiency(hcho, next_design_airflow, next_media_area)
@@ -149,6 +160,7 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
         room_floor_area_m2=room.floor_area_m2,
         required_p_cadr_m3h=required_p,
         required_f_cadr_m3h=required_f,
+        requirement_basis=requirement_basis,
         design_airflow_m3h=design_airflow,
         required_media_area_m2=media_area,
         minimum_required_media_area_m2=minimum_required_media_area,

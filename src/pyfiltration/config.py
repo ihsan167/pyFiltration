@@ -23,6 +23,8 @@ def design_inputs_from_mapping(data: dict[str, Any]) -> DesignInputs:
         filter=FilterSpec(**data["filter"]),
         fan=FanSpec(**data["fan"]),
         safety_factor=float(data.get("safety_factor", 1.0)),
+        required_p_cadr_m3h=data.get("required_p_cadr_m3h"),
+        required_f_cadr_m3h=data.get("required_f_cadr_m3h"),
     )
 
 

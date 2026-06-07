@@ -49,7 +49,9 @@ const defaultConfig = {
     fixed_airflow_m3h: null,
     power_w: 45.0
   },
-  safety_factor: 1.15
+  safety_factor: 1.15,
+  required_p_cadr_m3h: null,
+  required_f_cadr_m3h: null
 };
 
 let latestPayload = null;
@@ -80,6 +82,8 @@ const fieldHelp = {
   "room.width_m": "Room internal width in metres. Used to calculate floor area and volume.",
   "room.height_m": "Room internal height in metres. Typical homes are about 2.4 to 3.0 m.",
   "room.mixing_effectiveness": "How well clean air mixes in the room. Use 1.0 for ideal mixing; 0.7 to 0.9 is common for real placement.",
+  "required_p_cadr_m3h": "Direct particle CADR target in cubic metres per hour. Use when the requirement is already specified by a standard, customer, or test plan.",
+  "required_f_cadr_m3h": "Direct formaldehyde CADR target in cubic metres per hour. Use when the requirement is already specified by a standard, customer, or test plan.",
   "particle.target_clean_ach": "Target equivalent clean air changes per hour for particle removal.",
   "particle.existing_removal_ach": "Particle removal already provided by deposition, ventilation, or other systems.",
   "particle.single_pass_efficiency": "Fraction of particles captured in one pass through the filter. Use a decimal, for example 0.97.",
@@ -115,16 +119,20 @@ const fieldHelp = {
   "fan.fixed_airflow_m3h": "Known delivered airflow through the filter when using fixed-flow mode.",
   "fan.system_pressure_pa": "Additional housing, grille, duct, and outlet pressure losses besides the filter.",
   "fan.power_w": "Electrical fan power in watts. Used for reporting.",
-  "safety_factor": "Multiplier applied to required CADR during sizing. Use above 1.0 to add design margin."
+  "safety_factor": "Multiplier applied to the required CADR during airflow and media sizing. It also applies when direct CADR targets are entered."
 };
 
 document.addEventListener("DOMContentLoaded", () => {
   applyFieldHelp();
   setupPanelToggles();
   setForm(defaultConfig);
+  updateRequirementMode();
   updateFanMode();
   updateFilterSizeMode();
   updateComputedMediaArea();
+  document.querySelectorAll("input[name='requirement-mode']").forEach((input) => {
+    input.addEventListener("change", updateRequirementMode);
+  });
   document.querySelectorAll("input[name='fan-mode']").forEach((input) => {
     input.addEventListener("change", updateFanMode);
   });
@@ -147,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("calculate-button").addEventListener("click", calculate);
   document.getElementById("reset-button").addEventListener("click", () => {
     setForm(defaultConfig);
+    updateRequirementMode();
     updateFanMode();
     updateFilterSizeMode();
     updateComputedMediaArea();
@@ -166,6 +175,8 @@ function setForm(config) {
   });
   const fixed = config.fan && config.fan.fixed_airflow_m3h;
   document.querySelector(`input[name='fan-mode'][value='${fixed ? "fixed" : "curve"}']`).checked = true;
+  const directRequirements = config.required_p_cadr_m3h || config.required_f_cadr_m3h;
+  document.querySelector(`input[name='requirement-mode'][value='${directRequirements ? "direct" : "room"}']`).checked = true;
   const fixedFilter = config.filter && (
     config.filter.fixed_media_area_m2 ||
     (config.filter.frontal_width_m && config.filter.frontal_height_m)
@@ -191,6 +202,14 @@ function readForm() {
   } else {
     payload.fan.free_airflow_m3h = null;
     payload.fan.shutoff_pressure_pa = null;
+  }
+
+  const requirementMode = document.querySelector("input[name='requirement-mode']:checked").value;
+  if (requirementMode === "room") {
+    payload.required_p_cadr_m3h = null;
+    payload.required_f_cadr_m3h = null;
+  } else if (!payload.required_p_cadr_m3h || !payload.required_f_cadr_m3h) {
+    throw new Error("Enter both required P-CADR and required F-CADR for direct CADR mode.");
   }
 
   const filterMode = document.querySelector("input[name='filter-size-mode']:checked").value;
@@ -306,8 +325,10 @@ function renderMetrics(result) {
   document.getElementById("metrics").innerHTML = metrics.map(([label, value, sub, explanation]) => `
     <div class="metric">
       <div class="label">${escapeHtml(label)}</div>
-      <div class="value">${escapeHtml(value)}</div>
-      <div class="sub">${escapeHtml(sub)}</div>
+      <div class="value-line">
+        <span class="value">${escapeHtml(value)}</span>
+        <span class="sub">${escapeHtml(sub)}</span>
+      </div>
       <div class="explain">${escapeHtml(explanation)}</div>
     </div>
   `).join("");
@@ -354,7 +375,7 @@ function renderSummary(inputs, result) {
         </tr>
       </tbody>
     </table>
-    <p class="warnings">Media basis: ${escapeHtml(result.media_area_basis)}. Room volume: ${fmt(result.room_volume_m3, 2)} m3. Frontal area: ${fmt(result.frontal_area_m2 * mm2PerM2, 0)} mm2. Formaldehyde efficiency used: ${fmt(result.formaldehyde_efficiency_used, 3)}.</p>
+    <p class="warnings">Requirement basis: ${escapeHtml(result.requirement_basis)}. Media basis: ${escapeHtml(result.media_area_basis)}. Room volume: ${fmt(result.room_volume_m3, 2)} m3. Frontal area: ${fmt(result.frontal_area_m2 * mm2PerM2, 0)} mm2. Formaldehyde efficiency used: ${fmt(result.formaldehyde_efficiency_used, 3)}.</p>
     ${warnings}
   `;
 }
@@ -625,6 +646,13 @@ function updateFanMode() {
   const mode = document.querySelector("input[name='fan-mode']:checked").value;
   document.querySelectorAll("[data-mode]").forEach((item) => {
     item.classList.toggle("hidden", item.dataset.mode !== mode);
+  });
+}
+
+function updateRequirementMode() {
+  const mode = document.querySelector("input[name='requirement-mode']:checked").value;
+  document.querySelectorAll("[data-requirement-mode]").forEach((item) => {
+    item.classList.toggle("hidden", item.dataset.requirementMode !== mode);
   });
 }
 

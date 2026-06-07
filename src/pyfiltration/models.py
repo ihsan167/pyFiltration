@@ -50,7 +50,7 @@ class ParticleSpec:
     existing_removal_ach: float = 0.0
 
     def __post_init__(self) -> None:
-        _require_positive("particle.target_clean_ach", self.target_clean_ach)
+        _require_non_negative("particle.target_clean_ach", self.target_clean_ach)
         _require_fraction("particle.single_pass_efficiency", self.single_pass_efficiency)
         _require_non_negative("particle.existing_removal_ach", self.existing_removal_ach)
 
@@ -75,7 +75,7 @@ class FormaldehydeSpec:
     relative_humidity_percent: float = 50.0
 
     def __post_init__(self) -> None:
-        _require_positive("formaldehyde.target_clean_ach", self.target_clean_ach)
+        _require_non_negative("formaldehyde.target_clean_ach", self.target_clean_ach)
         _require_non_negative("formaldehyde.existing_removal_ach", self.existing_removal_ach)
         _require_non_negative("formaldehyde.source_generation_ug_h", self.source_generation_ug_h)
         _require_non_negative("formaldehyde.outdoor_concentration_ug_m3", self.outdoor_concentration_ug_m3)
@@ -182,9 +182,15 @@ class DesignInputs:
     filter: FilterSpec
     fan: FanSpec
     safety_factor: float = 1.0
+    required_p_cadr_m3h: float | None = None
+    required_f_cadr_m3h: float | None = None
 
     def __post_init__(self) -> None:
         _require_positive("safety_factor", self.safety_factor)
+        if self.required_p_cadr_m3h is not None:
+            _require_positive("required_p_cadr_m3h", self.required_p_cadr_m3h)
+        if self.required_f_cadr_m3h is not None:
+            _require_positive("required_f_cadr_m3h", self.required_f_cadr_m3h)
 
 
 @dataclass(frozen=True)
@@ -193,6 +199,7 @@ class DesignResult:
     room_floor_area_m2: float
     required_p_cadr_m3h: float
     required_f_cadr_m3h: float
+    requirement_basis: str
     design_airflow_m3h: float
     required_media_area_m2: float
     minimum_required_media_area_m2: float

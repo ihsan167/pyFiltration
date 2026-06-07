@@ -59,6 +59,27 @@
           </section>
 
           <section>
+            <h2>CADR Requirements</h2>
+            <p class="help-text">Choose how the Required P-CADR and F-CADR targets are set.</p>
+            <div class="segmented">
+              <label><input name="requirement-mode" value="room" type="radio" checked> Room targets</label>
+              <label><input name="requirement-mode" value="direct" type="radio"> Direct CADR</label>
+            </div>
+            <p class="help-text" data-requirement-mode="room">Required CADR is calculated from room volume, target ACH, HCHO concentration/source inputs, and the safety factor.</p>
+            <p class="help-text" data-requirement-mode="direct">Enter required CADR directly. Use Evaluate filter below to check whether a known filter geometry, airflow, efficiency, and fan pressure can meet it.</p>
+            <div class="field-grid" data-requirement-mode="direct">
+              <label>
+                Required P-CADR, m3/h
+                <input data-path="required_p_cadr_m3h" type="number" step="1" min="0">
+              </label>
+              <label>
+                Required F-CADR, m3/h
+                <input data-path="required_f_cadr_m3h" type="number" step="1" min="0">
+              </label>
+            </div>
+          </section>
+
+          <section>
             <h2>Particles</h2>
             <div class="field-grid">
               <label>
@@ -285,7 +306,7 @@
             <div class="meaning-grid">
               <div>
                 <strong>Required</strong>
-                <span>Minimum target calculated from room volume, target ACH, formaldehyde source inputs, and safety factor for sizing.</span>
+                <span>Minimum CADR target. It can come from room targets or from direct P-CADR and F-CADR entries.</span>
               </div>
               <div>
                 <strong>Clean</strong>
