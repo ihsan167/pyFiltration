@@ -54,8 +54,17 @@ const defaultConfig = {
   required_f_cadr_m3h: null
 };
 
+const defaultLabConfig = {
+  chamber_volume_m3: 28.5,
+  background_concentration: 0,
+  time_unit: "min",
+  natural_samples: "0, 100\n10, 96.72\n20, 93.56\n30, 90.48",
+  purifier_samples: "0, 100\n10, 49.66\n20, 24.66\n30, 12.25"
+};
+
 let latestPayload = null;
 let latestResult = null;
+let latestLabResult = null;
 let tooltipElement = null;
 
 const mm2PerM2 = 1000000;
@@ -126,6 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyFieldHelp();
   setupPanelToggles();
   setForm(defaultConfig);
+  setLabForm(defaultLabConfig);
   updateRequirementMode();
   updateFanMode();
   updateFilterSizeMode();
@@ -153,8 +163,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   document.getElementById("calculate-button").addEventListener("click", calculate);
+  document.getElementById("lab-calculate-button").addEventListener("click", calculateLabCadr);
   document.getElementById("reset-button").addEventListener("click", () => {
     setForm(defaultConfig);
+    setLabForm(defaultLabConfig);
     updateRequirementMode();
     updateFanMode();
     updateFilterSizeMode();
@@ -163,6 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("export-button").addEventListener("click", exportJson);
   calculate();
+  calculateLabCadr();
 });
 
 function setForm(config) {
@@ -235,6 +248,51 @@ function readForm() {
   return payload;
 }
 
+function setLabForm(config) {
+  document.getElementById("lab-chamber-volume").value = config.chamber_volume_m3;
+  document.getElementById("lab-background").value = config.background_concentration;
+  document.getElementById("lab-natural-samples").value = config.natural_samples;
+  document.getElementById("lab-purifier-samples").value = config.purifier_samples;
+  document.querySelector(`input[name='lab-time-unit'][value='${config.time_unit}']`).checked = true;
+}
+
+function readLabForm() {
+  const chamberVolume = numberOrNull(document.getElementById("lab-chamber-volume").value);
+  if (!chamberVolume) {
+    throw new Error("Enter chamber volume for the CADR chamber test.");
+  }
+  return {
+    chamber_volume_m3: chamberVolume,
+    background_concentration: numberOrNull(document.getElementById("lab-background").value) || 0,
+    time_unit: document.querySelector("input[name='lab-time-unit']:checked").value,
+    natural_samples: parseSampleText(document.getElementById("lab-natural-samples").value),
+    purifier_samples: parseSampleText(document.getElementById("lab-purifier-samples").value)
+  };
+}
+
+function parseSampleText(textValue) {
+  const samples = textValue
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))
+    .map((line) => {
+      const parts = line.split(/[,\s]+/).filter(Boolean);
+      if (parts.length !== 2) {
+        throw new Error("Each chamber sample must be entered as time, concentration.");
+      }
+      const time = Number(parts[0]);
+      const concentration = Number(parts[1]);
+      if (!Number.isFinite(time) || !Number.isFinite(concentration)) {
+        throw new Error("Chamber sample values must be numbers.");
+      }
+      return [time, concentration];
+    });
+  if (samples.length < 2) {
+    throw new Error("Enter at least two samples for each decay run.");
+  }
+  return samples;
+}
+
 async function calculate() {
   const button = document.getElementById("calculate-button");
   setStatus("Calculating...");
@@ -255,6 +313,34 @@ async function calculate() {
     renderResults(latestPayload, latestResult);
     setStatus("Ready");
   } catch (error) {
+    setStatus(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function calculateLabCadr() {
+  const button = document.getElementById("lab-calculate-button");
+  setStatus("Calculating chamber CADR...");
+  button.disabled = true;
+  try {
+    const payload = readLabForm();
+    const response = await fetch("/api/lab-cadr", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Chamber CADR calculation failed");
+    }
+    latestLabResult = data;
+    renderLabResults(data);
+    renderLabDecayChart(data);
+    setStatus("Ready");
+  } catch (error) {
+    document.getElementById("lab-results").innerHTML = `<div class="status error">${escapeHtml(error.message)}</div>`;
+    document.getElementById("lab-chart").innerHTML = "";
     setStatus(error.message, true);
   } finally {
     button.disabled = false;
@@ -494,6 +580,92 @@ function renderCapacityChart(inputs, result) {
     yLabel: "Mass (mg)",
     vlines: [{ x: life, color: "#525252", label: "Life" }]
   });
+}
+
+function renderLabResults(result) {
+  const warnings = result.warnings && result.warnings.length
+    ? `<div class="warnings">${result.warnings.map((warning) => `<div>${escapeHtml(warning)}</div>`).join("")}</div>`
+    : "";
+  document.getElementById("lab-results").innerHTML = `
+    <div class="lab-metric-grid">
+      <div class="lab-metric">
+        <span>Measured CADR</span>
+        <strong>${fmt(result.cadr_m3h, 1)}<small>m3/h</small></strong>
+      </div>
+      <div class="lab-metric">
+        <span>Purifier decay</span>
+        <strong>${fmt(result.purifier_decay_per_h, 3)}<small>1/h</small></strong>
+      </div>
+      <div class="lab-metric">
+        <span>Natural decay</span>
+        <strong>${fmt(result.natural_decay_per_h, 3)}<small>1/h</small></strong>
+      </div>
+      <div class="lab-metric">
+        <span>Net decay</span>
+        <strong>${fmt(result.net_decay_per_h, 3)}<small>1/h</small></strong>
+      </div>
+      <div class="lab-metric">
+        <span>Natural R2</span>
+        <strong>${fmt(result.natural_fit.r_squared, 3)}</strong>
+      </div>
+      <div class="lab-metric">
+        <span>Purifier R2</span>
+        <strong>${fmt(result.purifier_fit.r_squared, 3)}</strong>
+      </div>
+    </div>
+    <p class="warnings">CADR basis: chamber volume ${fmt(result.chamber_volume_m3, 2)} m3 x net decay ${fmt(result.net_decay_per_h, 3)} 1/h. Concentrations are background-corrected before fitting.</p>
+    ${warnings}
+  `;
+}
+
+function renderLabDecayChart(result) {
+  const allTimes = [
+    ...result.natural_fit.samples.map((sample) => sample.time),
+    ...result.purifier_fit.samples.map((sample) => sample.time)
+  ];
+  const minTime = Math.min(...allTimes);
+  const maxTime = Math.max(...allTimes);
+  const x = range(minTime, maxTime, 100);
+  const yMax = niceMax(Math.max(
+    ...result.natural_fit.samples.map((sample) => sample.concentration),
+    ...result.purifier_fit.samples.map((sample) => sample.concentration)
+  ));
+  lineChart("lab-chart", {
+    x,
+    yMax,
+    series: [
+      {
+        name: "Natural fit",
+        color: "#8a8f98",
+        values: x.map((time) => fittedLabConcentration(result.natural_fit, time))
+      },
+      {
+        name: "Purifier fit",
+        color: "#2563eb",
+        values: x.map((time) => fittedLabConcentration(result.purifier_fit, time))
+      }
+    ],
+    xLabel: `Time (${result.time_unit})`,
+    yLabel: "Background-corrected concentration",
+    markers: [
+      ...result.natural_fit.samples.map((sample) => ({
+        x: sample.time,
+        y: sample.concentration,
+        color: "#8a8f98",
+        label: ""
+      })),
+      ...result.purifier_fit.samples.map((sample) => ({
+        x: sample.time,
+        y: sample.concentration,
+        color: "#2563eb",
+        label: ""
+      }))
+    ]
+  });
+}
+
+function fittedLabConcentration(fit, timeValue) {
+  return Math.exp(fit.intercept + fit.slope_per_time_unit * timeValue);
 }
 
 function groupedBarChart(targetId, options) {
@@ -774,7 +946,8 @@ function setupToggleButton(buttonId, targetId, expandedText, collapsedText) {
 function exportJson() {
   const data = {
     inputs: latestPayload || readForm(),
-    result: latestResult
+    result: latestResult,
+    chamber_cadr_result: latestLabResult
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);

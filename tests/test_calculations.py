@@ -5,6 +5,7 @@ from pyfiltration.calculations import (
     cadr_from_airflow,
     cadr_from_decay,
     decay_rate_from_samples,
+    fit_decay_from_samples,
     pm25_cadr_from_smoke_dust,
     required_cadr_for_clean_ach,
     required_cadr_for_target_concentration,
@@ -41,6 +42,13 @@ class CalculationTests(unittest.TestCase):
     def test_decay_rate_from_samples(self):
         samples = [(0.0, 100.0), (10.0, 60.65306597), (20.0, 36.78794412)]
         self.assertAlmostEqual(decay_rate_from_samples(samples, time_unit="min"), 3.0, places=5)
+
+    def test_decay_fit_reports_quality(self):
+        samples = [(0.0, 100.0), (10.0, 60.65306597), (20.0, 36.78794412)]
+        fit = fit_decay_from_samples(samples, time_unit="min")
+        self.assertAlmostEqual(fit.rate_per_h, 3.0, places=5)
+        self.assertAlmostEqual(fit.r_squared, 1.0, places=5)
+        self.assertEqual(len(fit.adjusted_samples), 3)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,19 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from collections.abc import Sequence
+
+
+@dataclass(frozen=True)
+class DecayFit:
+    """First-order decay fit from concentration samples."""
+
+    rate_per_h: float
+    slope_per_time_unit: float
+    intercept: float
+    r_squared: float
+    adjusted_samples: tuple[tuple[float, float], ...]
 
 
 def cadr_from_decay(
@@ -29,6 +41,20 @@ def decay_rate_from_samples(
 
     Returns the decay constant in 1/h.
     """
+    return fit_decay_from_samples(
+        samples,
+        time_unit=time_unit,
+        background_concentration=background_concentration,
+    ).rate_per_h
+
+
+def fit_decay_from_samples(
+    samples: Sequence[tuple[float, float]],
+    *,
+    time_unit: str = "min",
+    background_concentration: float = 0.0,
+) -> DecayFit:
+    """Fit a first-order decay model from `(time, concentration)` samples."""
     if len(samples) < 2:
         raise ValueError("at least two samples are required")
     scale_to_h = {"min": 60.0, "h": 1.0, "s": 3600.0}.get(time_unit)
@@ -37,12 +63,14 @@ def decay_rate_from_samples(
 
     x_values: list[float] = []
     y_values: list[float] = []
+    adjusted_samples: list[tuple[float, float]] = []
     for time_value, concentration in samples:
         adjusted = concentration - background_concentration
         if adjusted <= 0:
             raise ValueError("all background-adjusted concentrations must be positive")
         x_values.append(time_value)
         y_values.append(math.log(adjusted))
+        adjusted_samples.append((time_value, adjusted))
 
     x_mean = sum(x_values) / len(x_values)
     y_mean = sum(y_values) / len(y_values)
@@ -52,7 +80,23 @@ def decay_rate_from_samples(
         raise ValueError("sample times must not all be identical")
 
     slope_per_time_unit = numerator / denominator
-    return max(0.0, -slope_per_time_unit * scale_to_h)
+    intercept = y_mean - slope_per_time_unit * x_mean
+    fitted = [intercept + slope_per_time_unit * x for x in x_values]
+    total_ss = sum((y - y_mean) ** 2 for y in y_values)
+    residual_ss = sum((y - y_hat) ** 2 for y, y_hat in zip(y_values, fitted, strict=True))
+    r_squared = 1.0 if total_ss == 0 else max(0.0, 1.0 - residual_ss / total_ss)
+    return DecayFit(
+        rate_per_h=max(0.0, -slope_per_time_unit * scale_to_h),
+        slope_per_time_unit=slope_per_time_unit,
+        intercept=intercept,
+        r_squared=r_squared,
+        adjusted_samples=tuple(adjusted_samples),
+    )
+
+
+def fitted_concentration(fit: DecayFit, time_value: float) -> float:
+    """Return the fitted background-adjusted concentration at a time value."""
+    return math.exp(fit.intercept + fit.slope_per_time_unit * time_value)
 
 
 def cadr_from_airflow(

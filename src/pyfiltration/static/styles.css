@@ -134,6 +134,7 @@ form section,
 .basis-panel,
 .output-notes,
 .summary-panel,
+.lab-results-panel,
 .charts-panel,
 .chart-panel,
 .metric {
@@ -203,7 +204,24 @@ input {
   font: inherit;
 }
 
+textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #cfd6df;
+  border-radius: 5px;
+  color: var(--ink);
+  background: var(--field);
+  font: 12px/1.35 Consolas, "Courier New", monospace;
+  resize: vertical;
+}
+
 input:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.22);
+  border-color: var(--blue);
+}
+
+textarea:focus {
   outline: 2px solid rgba(37, 99, 235, 0.22);
   border-color: var(--blue);
 }
@@ -212,6 +230,10 @@ input:focus {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+}
+
+.segmented.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .segmented.compact {
@@ -301,6 +323,17 @@ input:focus {
 
 .section-header h2 {
   margin: 0;
+}
+
+.section-tag {
+  padding: 3px 7px;
+  border: 1px solid #d7dee8;
+  border-radius: 999px;
+  color: var(--muted);
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .compact-button {
@@ -428,6 +461,56 @@ input:focus {
   padding: 14px;
   min-width: 0;
   overflow-x: hidden;
+}
+
+.lab-results-panel {
+  min-width: 0;
+  overflow-x: hidden;
+  padding: 14px;
+}
+
+.lab-results {
+  margin-top: 12px;
+}
+
+.lab-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  gap: 10px;
+}
+
+.lab-metric {
+  padding: 10px;
+  border: 1px solid #edf0f4;
+  border-radius: 6px;
+  background: #fbfcfd;
+}
+
+.lab-metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.lab-metric strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.lab-metric small {
+  margin-left: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.lab-chart {
+  margin-top: 12px;
+  min-height: 260px;
 }
 
 .summary-panel h2,
@@ -584,6 +667,7 @@ input:focus {
   .field-grid,
   .basis-grid,
   .metric-grid,
+  .lab-metric-grid,
   .chart-grid {
     grid-template-columns: 1fr;
   }

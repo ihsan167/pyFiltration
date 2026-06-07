@@ -269,6 +269,36 @@
               <input data-path="safety_factor" type="number" step="0.01" min="0.1">
             </label>
           </section>
+
+          <section>
+            <h2>Chamber CADR Test</h2>
+            <p class="help-text">Calculate measured CADR from standard chamber decay data: volume x (purifier decay - natural decay).</p>
+            <div class="field-grid">
+              <label>
+                Chamber volume, m3
+                <input id="lab-chamber-volume" type="number" step="0.1" min="0.1">
+              </label>
+              <label>
+                Background concentration
+                <input id="lab-background" type="number" step="0.01" min="0">
+              </label>
+            </div>
+            <div class="segmented three">
+              <label><input name="lab-time-unit" value="min" type="radio" checked> min</label>
+              <label><input name="lab-time-unit" value="h" type="radio"> h</label>
+              <label><input name="lab-time-unit" value="s" type="radio"> s</label>
+            </div>
+            <label class="full-field">
+              Natural decay samples
+              <textarea id="lab-natural-samples" rows="5" spellcheck="false"></textarea>
+            </label>
+            <label class="full-field">
+              Purifier decay samples
+              <textarea id="lab-purifier-samples" rows="5" spellcheck="false"></textarea>
+            </label>
+            <p class="help-text">Enter one sample per line as time, concentration. Example: 0, 100</p>
+            <button id="lab-calculate-button" type="button">Calculate Chamber CADR</button>
+          </section>
         </form>
       </aside>
 
@@ -325,6 +355,17 @@
         <section class="summary-panel">
           <h2>Design Summary</h2>
           <div id="summary"></div>
+        </section>
+
+        <section class="lab-results-panel">
+          <div class="section-header">
+            <h2>Measured Chamber CADR</h2>
+            <span class="section-tag">Decay test</span>
+          </div>
+          <div id="lab-results" class="lab-results">
+            <div class="status">Enter chamber samples, then calculate measured CADR.</div>
+          </div>
+          <div id="lab-chart" class="chart lab-chart"></div>
         </section>
 
         <section class="charts-panel">
