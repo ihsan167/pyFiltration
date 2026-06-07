@@ -5,7 +5,7 @@ Engineering calculator for sizing home air-purifier filters and estimating:
 - P-CADR: particulate clean air delivery rate, including PM2.5-style estimates.
 - F-CADR: formaldehyde clean air delivery rate for gas-phase media.
 - Filter media area, frontal area, face velocity, pressure drop, fan margin, service-life indicators, and room decay behavior.
-- Fixed filter media evaluation from media area or frontal width x height.
+- Fixed filter media evaluation from known media area, frontal width x height with a multiplier, or frontal width x height with pleat count and pleat depth.
 
 The project is designed for engineers who need transparent assumptions, editable inputs, and plots suitable for design review.
 
@@ -23,7 +23,7 @@ The calculator has two complementary modes:
    - pressure drop versus media velocity
    - clean and loaded filter states
    - activated-carbon mass and usable formaldehyde capacity
-   - optional fixed media area or frontal width x height for evaluating an existing filter
+   - optional fixed media area, multiplier-based dimensions, or pleat-geometry dimensions for evaluating an existing filter
 
 2. Lab-style CADR from decay measurements:
    - natural decay rate
@@ -93,12 +93,13 @@ The UI lets you edit room dimensions, particle targets, formaldehyde source and 
 Use the Filter section in either mode:
 
 - `Size required`: the calculator finds the media area needed to meet the CADR targets.
-- `Evaluate filter`: enter frontal width and height in `mm` with the pleat multiplier. The calculator computes media area in `mm2` and then estimates airflow, pressure drop, P-CADR, and F-CADR for that actual filter size.
+- `Evaluate filter`: enter frontal width and height in `mm`, then choose either `Multiplier` or `Pleat geometry`. The calculator computes unfolded media area in `mm2` and then estimates airflow, pressure drop, P-CADR, and F-CADR for that actual filter size.
 
 Important geometry terms:
 
 - `Frontal area = frontal width * frontal height`
 - `Media area = frontal area * pleat multiplier`
+- In `Pleat geometry`, pleat depth increases unfolded media area, not frontal area. The calculator uses pleat count, pitch, pleat depth, pleat length, and usable media factor.
 - For a flat filter, pleat multiplier is `1`, so media area equals frontal area.
 - Use `Known media area` only when the supplier gives the unfolded filter media area directly. In the browser UI, enter that known area in `mm2`.
 

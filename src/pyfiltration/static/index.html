@@ -178,7 +178,12 @@
               <label><input name="filter-input-mode" value="dimensions" type="radio" checked> Dimensions</label>
               <label><input name="filter-input-mode" value="media-area" type="radio"> Known media area</label>
             </div>
-            <p class="help-text" data-filter-size-mode="fixed" data-filter-input-mode="dimensions">Frontal area is width x height. Pleated media area is estimated as frontal area x pleat multiplier.</p>
+            <div class="segmented compact" data-filter-size-mode="fixed" data-filter-input-mode="dimensions">
+              <label><input name="filter-media-method" value="multiplier" type="radio" checked> Multiplier</label>
+              <label><input name="filter-media-method" value="geometry" type="radio"> Pleat geometry</label>
+            </div>
+            <p class="help-text" data-filter-size-mode="fixed" data-filter-input-mode="dimensions" data-filter-media-method="multiplier">Frontal area is width x height. Pleated media area is estimated as frontal area x pleat multiplier.</p>
+            <p class="help-text" data-filter-size-mode="fixed" data-filter-input-mode="dimensions" data-filter-media-method="geometry">Frontal area stays width x height. Pleat depth increases unfolded media area through the pleat leg length, pitch, and usable media factor.</p>
             <p class="help-text" data-filter-size-mode="fixed" data-filter-input-mode="media-area">Use known media area only when the supplier gives the unfolded filter media area.</p>
             <div class="field-grid">
               <label data-filter-size-mode="fixed" data-filter-input-mode="media-area">
@@ -197,9 +202,28 @@
                 Velocity limit, m/s
                 <input data-path="filter.media_velocity_limit_m_s" type="number" step="0.01" min="0">
               </label>
-              <label>
+              <label data-pleat-multiplier-field>
                 Pleat multiplier
                 <input data-path="filter.pleat_area_multiplier" type="number" step="0.1" min="1">
+              </label>
+              <label data-filter-size-mode="fixed" data-filter-input-mode="dimensions" data-filter-media-method="geometry">
+                Pleat direction
+                <select data-path="filter.pleat_direction">
+                  <option value="vertical">Vertical</option>
+                  <option value="horizontal">Horizontal</option>
+                </select>
+              </label>
+              <label data-filter-size-mode="fixed" data-filter-input-mode="dimensions" data-filter-media-method="geometry">
+                Pleat count
+                <input data-path="filter.pleat_count" type="number" step="1" min="1">
+              </label>
+              <label data-filter-size-mode="fixed" data-filter-input-mode="dimensions" data-filter-media-method="geometry">
+                Pleat depth, mm
+                <input data-path="filter.pleat_depth_m" type="number" step="1" min="0">
+              </label>
+              <label data-filter-size-mode="fixed" data-filter-input-mode="dimensions" data-filter-media-method="geometry">
+                Usable media factor
+                <input data-path="filter.usable_media_factor" type="number" step="0.01" min="0.01" max="1">
               </label>
               <label>
                 Bypass fraction
@@ -318,7 +342,7 @@
             </div>
             <div>
               <strong>Filter Size</strong>
-              <span>The UI accepts filter dimensions in mm. Frontal area is width x height. Media area is frontal area x pleat multiplier unless you enter a known unfolded media area.</span>
+              <span>The UI accepts filter dimensions in mm. Frontal area is width x height. Media area can come from a multiplier, pleat geometry, or a known unfolded media area.</span>
             </div>
             <div>
               <strong>Pressure</strong>

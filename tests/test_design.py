@@ -1,3 +1,4 @@
+import math
 import unittest
 from dataclasses import asdict
 
@@ -106,7 +107,7 @@ class DesignTests(unittest.TestCase):
             "safety_factor": inputs.safety_factor,
         }
         result = design_air_purifier(design_inputs_from_mapping(payload))
-        self.assertEqual(result.media_area_basis, "user-defined fixed media")
+        self.assertEqual(result.media_area_basis, "known unfolded media area")
         self.assertAlmostEqual(result.required_media_area_m2, 0.45)
         self.assertLess(result.loaded_p_cadr_m3h, result.required_p_cadr_m3h)
         self.assertTrue(result.warnings)
@@ -151,9 +152,40 @@ class DesignTests(unittest.TestCase):
             "safety_factor": inputs.safety_factor,
         }
         result = design_air_purifier(design_inputs_from_mapping(payload))
-        self.assertEqual(result.media_area_basis, "user-defined fixed media")
+        self.assertEqual(result.media_area_basis, "frontal dimensions x pleat multiplier")
         self.assertAlmostEqual(result.frontal_area_m2, 0.15)
         self.assertAlmostEqual(result.required_media_area_m2, 1.2)
+
+    def test_filter_pleat_geometry_computes_unfolded_media_area(self):
+        inputs = load_design_config("examples/home_air_purifier.json")
+        payload = {
+            "room": asdict(inputs.room),
+            "particle": asdict(inputs.particle),
+            "formaldehyde": asdict(inputs.formaldehyde),
+            "filter": {
+                "media_velocity_limit_m_s": inputs.filter.media_velocity_limit_m_s,
+                "pleat_area_multiplier": 8.0,
+                "frontal_width_m": 0.3,
+                "frontal_height_m": 0.5,
+                "pleat_direction": "vertical",
+                "pleat_count": 30,
+                "pleat_depth_m": 0.02,
+                "usable_media_factor": 0.95,
+                "bypass_fraction": inputs.filter.bypass_fraction,
+                "pressure_drop_ref_pa": inputs.filter.pressure_drop_ref_pa,
+                "pressure_drop_ref_velocity_m_s": inputs.filter.pressure_drop_ref_velocity_m_s,
+                "pressure_drop_exponent": inputs.filter.pressure_drop_exponent,
+                "loaded_pressure_drop_multiplier": inputs.filter.loaded_pressure_drop_multiplier,
+            },
+            "fan": asdict(inputs.fan),
+            "safety_factor": inputs.safety_factor,
+        }
+        result = design_air_purifier(design_inputs_from_mapping(payload))
+        pitch = 0.3 / 30
+        expected_area = 30 * 2 * math.hypot(0.02, pitch / 2) * 0.5 * 0.95
+        self.assertEqual(result.media_area_basis, "pleat geometry from filter dimensions")
+        self.assertAlmostEqual(result.frontal_area_m2, 0.15)
+        self.assertAlmostEqual(result.required_media_area_m2, expected_area)
 
     def test_filter_geometry_rejects_conflicting_area_inputs(self):
         payload = {

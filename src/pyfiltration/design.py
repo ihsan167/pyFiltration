@@ -164,7 +164,7 @@ def design_air_purifier(inputs: DesignInputs) -> DesignResult:
         design_airflow_m3h=design_airflow,
         required_media_area_m2=media_area,
         minimum_required_media_area_m2=minimum_required_media_area,
-        media_area_basis="user-defined fixed media" if supplied_media_area is not None else "sized to requirements",
+        media_area_basis=filt.media_area_basis,
         frontal_area_m2=frontal_area,
         clean_airflow_m3h=clean_airflow,
         loaded_airflow_m3h=loaded_airflow,
@@ -326,7 +326,7 @@ def _warnings(
         warnings.append("Fan pressure at design airflow is below loaded-filter pressure demand.")
     if supplied_media_area is not None and supplied_media_area + 1e-6 < minimum_required_media_area:
         warnings.append(
-            "User-defined media area is below the calculated area needed to meet the target CADR and pressure limits."
+            "Supplied media area is below the calculated area needed to meet the target CADR and pressure limits."
         )
     if supplied_media_area is not None and media_velocity_loaded > media_velocity_limit:
         warnings.append("Loaded media velocity is above the selected filter media velocity limit.")

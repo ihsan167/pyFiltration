@@ -89,7 +89,15 @@ frontal area = frontal width * frontal height
 media area = frontal area * pleat area multiplier
 ```
 
-For a flat filter, the pleat area multiplier is `1`, so frontal area and media area are the same. For a pleated filter, media area is larger than frontal area. The resulting pressure drop is solved against the fan curve to estimate clean and loaded airflow. CADR is then calculated from the delivered airflow, not from the target airflow.
+or, when pleat geometry is supplied:
+
+```text
+pitch = frontal dimension across pleats / pleat count
+pleat leg = sqrt(pleat depth^2 + (pitch / 2)^2)
+media area = pleat count * 2 * pleat leg * pleat length * usable media factor
+```
+
+For a flat filter, the pleat area multiplier is `1`, so frontal area and media area are the same. For a pleated filter, media area is larger than frontal area. Pleat depth increases unfolded media area, but it does not increase frontal area. The resulting pressure drop is solved against the fan curve to estimate clean and loaded airflow. CADR is then calculated from the delivered airflow, not from the target airflow.
 
 The browser UI accepts filter dimensions in `mm` and known media area in `mm2`. The calculation engine converts those values to `m` and `m2` internally.
 
@@ -117,7 +125,7 @@ This is intentionally conservative and should be replaced with media supplier br
 - Filter bypass leakage
 - Filter media velocity limit
 - Fixed media area, or frontal width and height
-- Pleat area multiplier
+- Pleat area multiplier, or pleat count, pleat depth, pleat direction, and usable media factor
 - Clean and loaded pressure drop
 - Fan free airflow, shutoff pressure, and system losses
 - Carbon mass, capacity, utilization, and replacement interval

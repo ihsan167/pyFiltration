@@ -35,6 +35,10 @@ const defaultConfig = {
     fixed_media_area_m2: null,
     frontal_width_m: null,
     frontal_height_m: null,
+    pleat_direction: "vertical",
+    pleat_count: null,
+    pleat_depth_m: null,
+    usable_media_factor: 0.95,
     bypass_fraction: 0.03,
     pressure_drop_ref_pa: 55.0,
     pressure_drop_ref_velocity_m_s: 0.20,
@@ -82,6 +86,10 @@ const inputConversions = {
   "filter.frontal_height_m": {
     toUi: (value) => value * mmPerM,
     fromUi: (value) => value / mmPerM
+  },
+  "filter.pleat_depth_m": {
+    toUi: (value) => value * mmPerM,
+    fromUi: (value) => value / mmPerM
   }
 };
 
@@ -117,6 +125,10 @@ const fieldHelp = {
   "filter.frontal_height_m": "Visible filter opening height in mm, measured across the front face.",
   "filter.media_velocity_limit_m_s": "Maximum air velocity through the media. Lower values reduce pressure drop and can improve efficiency.",
   "filter.pleat_area_multiplier": "How many times larger the pleated media area is than the frontal area. Use 1 for a flat filter.",
+  "filter.pleat_direction": "Direction the pleat fold lines run across the filter face. Vertical pleats run along the height; horizontal pleats run along the width.",
+  "filter.pleat_count": "Number of pleat peaks or pleat spaces across the pleated direction of the filter face.",
+  "filter.pleat_depth_m": "Depth of each pleat from peak to valley in mm. Deeper pleats increase unfolded media area without increasing frontal area.",
+  "filter.usable_media_factor": "Fraction of pleated media area that is actually usable after glue, seals, frame masking, and edge losses.",
   "filter.bypass_fraction": "Fraction of airflow leaking around the filter instead of passing through it.",
   "filter.pressure_drop_ref_pa": "Clean filter pressure drop measured at the reference media velocity.",
   "filter.pressure_drop_ref_velocity_m_s": "Media velocity used for the reference pressure-drop value.",
@@ -152,16 +164,26 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("input[name='filter-input-mode']").forEach((input) => {
     input.addEventListener("change", updateFilterSizeMode);
   });
+  document.querySelectorAll("input[name='filter-media-method']").forEach((input) => {
+    input.addEventListener("change", updateFilterSizeMode);
+  });
   [
     "filter.frontal_width_m",
     "filter.frontal_height_m",
-    "filter.pleat_area_multiplier"
+    "filter.pleat_area_multiplier",
+    "filter.pleat_count",
+    "filter.pleat_depth_m",
+    "filter.usable_media_factor"
   ].forEach((path) => {
     const input = document.querySelector(`[data-path='${path}']`);
     if (input) {
       input.addEventListener("input", updateComputedMediaArea);
     }
   });
+  const pleatDirection = document.querySelector("[data-path='filter.pleat_direction']");
+  if (pleatDirection) {
+    pleatDirection.addEventListener("change", updateComputedMediaArea);
+  }
   document.getElementById("calculate-button").addEventListener("click", calculate);
   document.getElementById("lab-calculate-button").addEventListener("click", calculateLabCadr);
   document.getElementById("reset-button").addEventListener("click", () => {
@@ -197,6 +219,8 @@ function setForm(config) {
   document.querySelector(`input[name='filter-size-mode'][value='${fixedFilter ? "fixed" : "sizing"}']`).checked = true;
   const inputMode = config.filter && config.filter.fixed_media_area_m2 ? "media-area" : "dimensions";
   document.querySelector(`input[name='filter-input-mode'][value='${inputMode}']`).checked = true;
+  const mediaMethod = config.filter && config.filter.pleat_count && config.filter.pleat_depth_m ? "geometry" : "multiplier";
+  document.querySelector(`input[name='filter-media-method'][value='${mediaMethod}']`).checked = true;
 }
 
 function readForm() {
@@ -230,22 +254,40 @@ function readForm() {
     payload.filter.fixed_media_area_m2 = null;
     payload.filter.frontal_width_m = null;
     payload.filter.frontal_height_m = null;
+    clearPleatGeometry(payload.filter);
   } else {
     const inputMode = document.querySelector("input[name='filter-input-mode']:checked").value;
     if (inputMode === "dimensions") {
+      const mediaMethod = document.querySelector("input[name='filter-media-method']:checked").value;
       payload.filter.fixed_media_area_m2 = null;
       if (!payload.filter.frontal_width_m || !payload.filter.frontal_height_m) {
         throw new Error("Enter frontal width and frontal height to evaluate a filter by dimensions.");
       }
+      if (mediaMethod === "geometry") {
+        if (!payload.filter.pleat_count || !payload.filter.pleat_depth_m) {
+          throw new Error("Enter pleat count and pleat depth for pleat geometry media area.");
+        }
+        if (!payload.filter.usable_media_factor) {
+          throw new Error("Enter a usable media factor greater than 0 for pleat geometry.");
+        }
+      } else {
+        clearPleatGeometry(payload.filter);
+      }
     } else {
       payload.filter.frontal_width_m = null;
       payload.filter.frontal_height_m = null;
+      clearPleatGeometry(payload.filter);
       if (!payload.filter.fixed_media_area_m2) {
         throw new Error("Enter known media area to evaluate a filter by media area.");
       }
     }
   }
   return payload;
+}
+
+function clearPleatGeometry(filter) {
+  filter.pleat_count = null;
+  filter.pleat_depth_m = null;
 }
 
 function setLabForm(config) {
@@ -375,7 +417,7 @@ function renderMetrics(result) {
       "Media area",
       fmt(result.required_media_area_m2 * mm2PerM2, 0),
       "mm2",
-      "Unfolded filter media area used. With dimensions: frontal width x frontal height x pleat multiplier."
+      `Unfolded filter media area used for velocity, pressure drop, and CADR estimates. Basis: ${result.media_area_basis}.`
     ],
     [
       "Pressure margin",
@@ -831,10 +873,16 @@ function updateRequirementMode() {
 function updateFilterSizeMode() {
   const sizeMode = document.querySelector("input[name='filter-size-mode']:checked").value;
   const inputMode = document.querySelector("input[name='filter-input-mode']:checked").value;
+  const mediaMethod = document.querySelector("input[name='filter-media-method']:checked").value;
   document.querySelectorAll("[data-filter-size-mode]").forEach((item) => {
     const sizeMatches = item.dataset.filterSizeMode === sizeMode;
     const inputMatches = !item.dataset.filterInputMode || item.dataset.filterInputMode === inputMode;
-    item.classList.toggle("hidden", !sizeMatches || !inputMatches);
+    const methodMatches = !item.dataset.filterMediaMethod || item.dataset.filterMediaMethod === mediaMethod;
+    item.classList.toggle("hidden", !sizeMatches || !inputMatches || !methodMatches);
+  });
+  document.querySelectorAll("[data-pleat-multiplier-field]").forEach((item) => {
+    const usingGeometry = sizeMode === "fixed" && inputMode === "dimensions" && mediaMethod === "geometry";
+    item.classList.toggle("hidden", usingGeometry);
   });
   updateComputedMediaArea();
 }
@@ -846,12 +894,33 @@ function updateComputedMediaArea() {
   }
   const width = numberOrNull(document.querySelector("[data-path='filter.frontal_width_m']").value);
   const height = numberOrNull(document.querySelector("[data-path='filter.frontal_height_m']").value);
-  const multiplier = numberOrNull(document.querySelector("[data-path='filter.pleat_area_multiplier']").value);
-  if (!width || !height || !multiplier) {
+  if (!width || !height) {
     target.textContent = "N/A";
     return;
   }
   const frontalAreaMm2 = width * height;
+  const mediaMethod = document.querySelector("input[name='filter-media-method']:checked").value;
+  if (mediaMethod === "geometry") {
+    const direction = document.querySelector("[data-path='filter.pleat_direction']").value;
+    const pleatCount = numberOrNull(document.querySelector("[data-path='filter.pleat_count']").value);
+    const pleatDepth = numberOrNull(document.querySelector("[data-path='filter.pleat_depth_m']").value);
+    const usableFactor = numberOrNull(document.querySelector("[data-path='filter.usable_media_factor']").value);
+    if (!pleatCount || !pleatDepth || !usableFactor) {
+      target.textContent = `${fmt(frontalAreaMm2, 0)} mm2 frontal; enter pleat geometry`;
+      return;
+    }
+    const pitch = (direction === "vertical" ? width : height) / pleatCount;
+    const pleatLength = direction === "vertical" ? height : width;
+    const leg = Math.hypot(pleatDepth, pitch / 2);
+    const mediaAreaMm2 = pleatCount * 2 * leg * pleatLength * usableFactor;
+    target.textContent = `${fmt(mediaAreaMm2, 0)} mm2 media (${fmt(frontalAreaMm2, 0)} frontal, ${fmt(pitch, 1)} mm pitch)`;
+    return;
+  }
+  const multiplier = numberOrNull(document.querySelector("[data-path='filter.pleat_area_multiplier']").value);
+  if (!multiplier) {
+    target.textContent = "N/A";
+    return;
+  }
   const mediaAreaMm2 = frontalAreaMm2 * multiplier;
   target.textContent = `${fmt(frontalAreaMm2, 0)} mm2 frontal x ${fmt(multiplier, 2)} = ${fmt(mediaAreaMm2, 0)} mm2 media`;
 }

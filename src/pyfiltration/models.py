@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from dataclasses import asdict, dataclass
 
 
@@ -102,6 +104,10 @@ class FilterSpec:
     fixed_media_area_m2: float | None = None
     frontal_width_m: float | None = None
     frontal_height_m: float | None = None
+    pleat_direction: str = "vertical"
+    pleat_count: int | None = None
+    pleat_depth_m: float | None = None
+    usable_media_factor: float = 1.0
     bypass_fraction: float = 0.0
     pressure_drop_ref_pa: float = 50.0
     pressure_drop_ref_velocity_m_s: float = 0.2
@@ -111,21 +117,35 @@ class FilterSpec:
     def __post_init__(self) -> None:
         _require_positive("filter.media_velocity_limit_m_s", self.media_velocity_limit_m_s)
         _require_positive("filter.pleat_area_multiplier", self.pleat_area_multiplier)
+        _require_positive("filter.usable_media_factor", self.usable_media_factor)
+        _require_fraction("filter.usable_media_factor", self.usable_media_factor)
         _require_fraction("filter.bypass_fraction", self.bypass_fraction)
         _require_positive("filter.pressure_drop_ref_pa", self.pressure_drop_ref_pa)
         _require_positive("filter.pressure_drop_ref_velocity_m_s", self.pressure_drop_ref_velocity_m_s)
         _require_positive("filter.pressure_drop_exponent", self.pressure_drop_exponent)
         _require_positive("filter.loaded_pressure_drop_multiplier", self.loaded_pressure_drop_multiplier)
+        if self.pleat_direction not in {"vertical", "horizontal"}:
+            raise ValueError("filter.pleat_direction must be 'vertical' or 'horizontal'")
         if self.fixed_media_area_m2 is not None:
             _require_positive("filter.fixed_media_area_m2", self.fixed_media_area_m2)
         if self.frontal_width_m is not None:
             _require_positive("filter.frontal_width_m", self.frontal_width_m)
         if self.frontal_height_m is not None:
             _require_positive("filter.frontal_height_m", self.frontal_height_m)
+        if self.pleat_count is not None:
+            _require_positive("filter.pleat_count", self.pleat_count)
+        if self.pleat_depth_m is not None:
+            _require_positive("filter.pleat_depth_m", self.pleat_depth_m)
         if (self.frontal_width_m is None) != (self.frontal_height_m is None):
             raise ValueError("filter.frontal_width_m and filter.frontal_height_m must be provided together")
         if self.fixed_media_area_m2 is not None and self.frontal_width_m is not None:
             raise ValueError("filter requires either fixed_media_area_m2 or frontal dimensions, not both")
+        if (self.pleat_count is None) != (self.pleat_depth_m is None):
+            raise ValueError("filter.pleat_count and filter.pleat_depth_m must be provided together")
+        if self.pleat_count is not None and self.frontal_width_m is None:
+            raise ValueError("filter pleat geometry requires frontal dimensions")
+        if self.pleat_count is not None and self.fixed_media_area_m2 is not None:
+            raise ValueError("filter pleat geometry cannot be combined with fixed_media_area_m2")
 
     @property
     def supplied_frontal_area_m2(self) -> float | None:
@@ -136,12 +156,42 @@ class FilterSpec:
         return self.frontal_width_m * self.frontal_height_m
 
     @property
+    def pleat_geometry_media_area_m2(self) -> float | None:
+        if (
+            self.pleat_count is None
+            or self.pleat_depth_m is None
+            or self.frontal_width_m is None
+            or self.frontal_height_m is None
+        ):
+            return None
+        if self.pleat_direction == "vertical":
+            pitch = self.frontal_width_m / self.pleat_count
+            pleat_length = self.frontal_height_m
+        else:
+            pitch = self.frontal_height_m / self.pleat_count
+            pleat_length = self.frontal_width_m
+        unfolded_leg_length = math.hypot(self.pleat_depth_m, pitch / 2.0)
+        return self.pleat_count * 2.0 * unfolded_leg_length * pleat_length * self.usable_media_factor
+
+    @property
     def supplied_media_area_m2(self) -> float | None:
         if self.fixed_media_area_m2 is not None:
             return self.fixed_media_area_m2
         if self.supplied_frontal_area_m2 is None:
             return None
+        if self.pleat_geometry_media_area_m2 is not None:
+            return self.pleat_geometry_media_area_m2
         return self.supplied_frontal_area_m2 * self.pleat_area_multiplier
+
+    @property
+    def media_area_basis(self) -> str:
+        if self.fixed_media_area_m2 is not None:
+            return "known unfolded media area"
+        if self.pleat_geometry_media_area_m2 is not None:
+            return "pleat geometry from filter dimensions"
+        if self.supplied_frontal_area_m2 is not None:
+            return "frontal dimensions x pleat multiplier"
+        return "sized to requirements"
 
 
 @dataclass(frozen=True)
