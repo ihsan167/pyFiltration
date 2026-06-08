@@ -129,6 +129,6 @@ p_cadr = cadr_from_decay(
 )
 ```
 
-## Notes
+## Disclaimer
 
 This is an engineering design and analysis tool, not a product certification claim. Formal CADR labels should be based on the applicable laboratory standard and accredited test data.
